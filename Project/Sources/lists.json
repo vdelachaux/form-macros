@@ -1,0 +1,22 @@
+{
+	"media": {
+		"editable": false,
+		"items": [
+			{
+				"text": "none",
+				"ref": 1,
+				"editable": true
+			},
+			{
+				"text": "mac",
+				"ref": 2,
+				"editable": true
+			},
+			{
+				"text": "windows",
+				"ref": 3,
+				"editable": true
+			}
+		]
+	}
+}

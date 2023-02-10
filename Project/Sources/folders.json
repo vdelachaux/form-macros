@@ -1,0 +1,24 @@
+{
+	"⚙️ EMBEDDED_CSS": {
+		"methods": [
+			"addRow"
+		],
+		"forms": [
+			"EMBEDDED_CSS"
+		],
+		"classes": [
+			"_EmbeddedCSS"
+		]
+	},
+	"🛠 Tools": {
+		"methods": [
+			"isInsidePackage",
+			"isSubOf",
+			"validatePath"
+		],
+		"classes": [
+			"_MacroHelper"
+		]
+	},
+	"trash": {}
+}
