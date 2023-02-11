@@ -52,6 +52,11 @@ Function get file : 4D:C1709.File
 	
 	return This:C1470.editor.file
 	
+	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
+Function get default : Object
+	
+	return This:C1470.DefaultValues
+	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function getDefaultValues($type : Text) : Object
 	
@@ -88,7 +93,24 @@ Function get css() : Collection
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function set css($css : Collection)
 	
-	
+	Case of 
+			//______________________________________________________
+		: ($css.length=0)
+			
+			OB REMOVE:C1226(This:C1470.editor.formProperties; "css")
+			
+			//______________________________________________________
+		: ($css.length=1)
+			
+			This:C1470.editor.formProperties.css:=$css[0].path
+			
+			//______________________________________________________
+		Else 
+			
+			This:C1470.editor.formProperties.css:=$css.copy()
+			
+			//______________________________________________________
+	End case 
 	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 Function get _defaultValues : Object

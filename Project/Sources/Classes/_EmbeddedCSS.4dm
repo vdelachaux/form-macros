@@ -35,12 +35,10 @@ $result.editor.activeView          Text          Active view name
 	$data.result:=False:C215
 	$data.helper:=cs:C1710._MacroHelper.new($editor)
 	
-	//fixme:To remove if into the helper
+	// FIXME:To remove if moved into the helper
 	$data.form:=File:C1566($data.helper.file.platformPath; fk platform path:K87:2; *)  //unsandboxing
-	//$data.embedded_css:=$data.helper.css
 	$data.validatepath:=Formula:C1597(validatePath)
 	$data.isInsidePackage:=Formula:C1597(isInsidePackage)
-	$data.addRow:=Formula:C1597(addRow)
 	
 	// TODO:Center to the current form window
 	$windowRef:=Open form window:C675("EMBEDDED_CSS"; Movable form dialog box:K39:8)
@@ -63,6 +61,8 @@ $result.editor.activeView          Text          Active view name
 			
 		End if 
 	End if 
+	
+	return $result
 	
 	//=== === === === === === === === === === === === === === === === === === === === === === ===
 Function onError($editor : Object; $result : Object; $errors : Collection)

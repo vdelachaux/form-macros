@@ -3,17 +3,22 @@
 		"editable": false,
 		"items": [
 			{
-				"text": "none",
+				"text": "All",
 				"ref": 1,
 				"editable": true
 			},
 			{
-				"text": "mac",
+				"text": "-",
+				"ref": 4,
+				"editable": false
+			},
+			{
+				"text": "macOS",
 				"ref": 2,
 				"editable": true
 			},
 			{
-				"text": "windows",
+				"text": "Windows",
 				"ref": 3,
 				"editable": true
 			}

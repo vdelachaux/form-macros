@@ -1,8 +1,5 @@
 {
 	"⚙️ EMBEDDED_CSS": {
-		"methods": [
-			"addRow"
-		],
 		"forms": [
 			"EMBEDDED_CSS"
 		],

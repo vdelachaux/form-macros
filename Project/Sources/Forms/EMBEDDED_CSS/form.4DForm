@@ -14,7 +14,10 @@
 	"events": [
 		"onLoad",
 		"onValidate",
+		"onClick",
+		"onTimer",
 		"onAfterKeystroke",
+		"onSelectionChange",
 		"onAfterEdit"
 	],
 	"windowTitle": "CSS",
@@ -29,7 +32,7 @@
 					"type": "listbox",
 					"left": 0,
 					"top": 0,
-					"width": 493,
+					"width": 490,
 					"height": 226,
 					"events": [
 						"onClick",
@@ -37,7 +40,6 @@
 					],
 					"sizingX": "grow",
 					"sizingY": "grow",
-					"method": "ObjectMethods/listBox.4dm",
 					"singleClickEdit": false,
 					"dataSource": "Form:C1466.list",
 					"headerHeight": "2em",
@@ -47,10 +49,13 @@
 					"listboxType": "collection",
 					"hideExtraBlankRows": false,
 					"scrollbarVertical": "automatic",
+					"currentItemSource": "Form:C1466.current",
+					"currentItemPositionSource": "Form:C1466.position",
+					"selectedItemsSource": "Form:C1466.selected",
 					"columns": [
 						{
 							"header": {
-								"text": "Path",
+								"text": "Style Sheet",
 								"name": "Entête1",
 								"verticalAlign": "middle",
 								"textAlign": "center"
@@ -60,19 +65,13 @@
 								"name": "Pied1"
 							},
 							"width": 396,
-							"events": [
-								"onLosingFocus",
-								"onDataChange",
-								"onAlternateClick",
-								"onBeforeDataEntry"
-							],
-							"method": "ObjectMethods/path.4dm",
+							"events": [],
 							"dataSource": "This:C1470.path"
 						},
 						{
 							"header": {
 								"name": "Entête2",
-								"text": "Media",
+								"text": "Platform",
 								"verticalAlign": "middle",
 								"textAlign": "center"
 							},
@@ -82,15 +81,18 @@
 							},
 							"width": 80,
 							"resizable": false,
-							"dataSource": "This:C1470.media"
+							"dataSource": "This:C1470.media",
+							"choiceList": {
+								"$ref": "/SOURCES/lists.json#/media"
+							}
 						}
 					]
 				},
 				"Bouton": {
 					"type": "button",
 					"text": "OK",
-					"top": 271,
-					"left": 391,
+					"top": 246,
+					"left": 384,
 					"width": 86,
 					"height": 22,
 					"events": [
@@ -99,20 +101,6 @@
 					"sizingX": "move",
 					"sizingY": "move",
 					"defaultButton": true
-				},
-				"Bouton1": {
-					"type": "button",
-					"text": "Cancel",
-					"top": 271,
-					"left": 285,
-					"width": 86,
-					"height": 22,
-					"events": [
-						"onClick"
-					],
-					"sizingX": "move",
-					"sizingY": "move",
-					"action": "cancel"
 				},
 				"plus": {
 					"type": "button",
@@ -125,7 +113,6 @@
 						"onClick"
 					],
 					"style": "bevel",
-					"method": "ObjectMethods/plus.4dm",
 					"fontWeight": "bold"
 				},
 				"minus": {
@@ -144,7 +131,7 @@
 			}
 		}
 	],
-	"geometryStamp": 135,
+	"geometryStamp": 147,
 	"editor": {
 		"activeView": "View 1",
 		"defaultView": "View 1",
@@ -161,6 +148,9 @@
 		{
 			"path": "/SOURCES/styleSheets_windows.css",
 			"media": "windows"
+		},
+		{
+			"path": "/SOURCES/styleSheets.css"
 		}
 	]
 }
