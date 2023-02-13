@@ -1,8 +1,19 @@
 property form : Object
 property editor : Object
 
-Class constructor($editor : Object)
+Class constructor($macro : Object)
+/*
 	
+Parameters     Type          Description
+---------      ---------     ----------
+$macro         Object        Macro declaration object (in the formMacros.json file)
+	
+*/
+	
+	This:C1470.macro:=$macro
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function onInvoke($editor : Object)
 /*
 	
 Property                           Type          Description
@@ -22,8 +33,43 @@ $editor.editor.target              Text          Name of the object under the mo
 	This:C1470.form:=$editor
 	This:C1470.editor:=$editor.editor
 	
+	var $key : Text
+	For each ($key; This:C1470.editor)
+		
+		This:C1470["_"+$key]:=This:C1470.editor[$key]
+		
+	End for each 
+	
+	//=== === === === === === === === === === === === === === === === === === === === === === ===
+Function openWindow($name : Text) : Integer
+	
+	// TODO:Center to the current form window
+	return Open form window:C675($name; Movable form dialog box:K39:8)
+	
+	//=== === === === === === === === === === === === === === === === === === === === === === ===
+Function onError($editor : Object; $result : Object; $errors : Collection)
+/* 
+	
+Property                      Type          Description
+---------                     ---------     ---------
+$editor                       Object        Object send to onInvoke
+$resultMacro                  Object        Object returned by onInvoke
+$error                        Collection    Error stack
+$error.errCode                Number        Error code
+$error.message                Text          Description of the error
+$error.componentSignature     Text          Internal component signature
+	
+*/
+	
+	ALERT:C41($errors.extract("message").join("\n"))
+	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
-Function get formName : Text
+Function get file() : 4D:C1709.File
+	
+	return File:C1566(This:C1470._file.platformPath; fk platform path:K87:2; *)  // Unsandboxing
+	
+	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
+Function get name : Text
 	
 	return This:C1470.editor.name
 	
@@ -33,28 +79,19 @@ Function get pageCount : Integer
 	return This:C1470.editor.form.pages.length
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
-Function get currentPageNumber : Integer
-	
-	return This:C1470.editor.currentPageNumber
-	
-	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get objectMethodFolder : 4D:C1709.Folder
 	
 	return This:C1470.editor.file.parent.folder("ObjectMethods")
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
-Function get formFolder : 4D:C1709.Folder
+Function get folder : 4D:C1709.Folder
 	
 	return This:C1470.editor.file.parent
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
-Function get file : 4D:C1709.File
-	
-	return This:C1470.editor.file
-	
-	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get default : Object
 	
+	This:C1470.DefaultValues:=This:C1470.DefaultValues || This:C1470._defaultValues
 	return This:C1470.DefaultValues
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
@@ -130,8 +167,7 @@ Function get _defaultValues : Object
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get selection : Collection
 	
-	This:C1470.editor.currentSelection:=This:C1470.editor.currentSelection || New collection:C1472
-	return This:C1470.editor.currentSelection
+	return This:C1470._currentSelection || New collection:C1472
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function set selection($sel : Collection)
@@ -141,7 +177,7 @@ Function set selection($sel : Collection)
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get selectedObjectCount : Integer
 	
-	return This:C1470.selection.length
+	return This:C1470._currentSelection.length
 	
 	// Mark:-Widgets
 	// === === === === === === === === === === === === === === === === === === === === === === ===
@@ -210,7 +246,106 @@ Function deselectAll()
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function isInsidePackage($path : Text) : Boolean
 	
-	return isSubOf($path; "/PACKAGE/")
+	//return isSubOf($path; "/PACKAGE/")
+	return This:C1470._isSubOf($path; "/PACKAGE/")
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function validatePath($path : Text; $formPath : Text) : Text
+	
+	var $resultPath; $packagePath : Text
+	
+/*
+Returns a posix path according to the file location
+	
+Parameters         Type          Description
+---------          ---------     ---------
+$path              Text          Posix path to test
+$formPath          Text          The .4dform posix full path
+	
+*/
+	
+	If (This:C1470._isSubOf($path; $formPath; ->$resultPath))\
+		 | (This:C1470._isSubOf($path; "/LOGS/"; ->$resultPath))
+		
+		// Relative to form or Logs folder of the database
+		return $resultPath
+		
+	Else 
+		
+		If (This:C1470._isSubOf($path; "/PACKAGE/"; ->$resultPath))
+			
+			$packagePath:=$resultPath
+			$resultPath:=""
+			
+			Case of 
+					
+					//======================================
+				: (This:C1470._isSubOf($path; "/RESOURCES/"; ->$resultPath))
+					
+					//======================================
+				: (This:C1470._isSubOf($path; "/SOURCES/"; ->$resultPath))
+					
+					//======================================
+				: (This:C1470._isSubOf($path; "/PROJECT/"; ->$resultPath))
+					
+					//======================================
+			End case 
+			
+			return $resultPath="" ? $packagePath : $resultPath
+			
+		End if 
+	End if 
+	
+	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Function _isSubOf($path : Text; $parentPath : Text; $pathPtr : Pointer) : Boolean
+	
+	var $destFolder : Text
+	var $success : Boolean
+	
+/*
+Returns True if the posix path is in the given parent path
+	
+Parameters         Type          Description
+---------          ---------     ---------
+$path              Text          Posix path to test
+$parentPath        Text          The posix path whose path must be a child
+$pathPtr           Pointer       The result posix path
+	
+*/
+	
+	If (Count parameters:C259=3)
+		
+		$pathPtr->:=""
+		
+	End if 
+	
+	If ($parentPath="/PACKAGE/")\
+		 || ($parentPath="/RESOURCES/")\
+		 || ($parentPath="/SOURCES/")\
+		 || ($parentPath="/PROJECT/")\
+		 || ($parentPath="/LOGS/")
+		
+		$destFolder:=Folder:C1567(Folder:C1567($parentPath; fk posix path:K87:1; *).platformPath; fk platform path:K87:2).path
+		
+	Else 
+		
+		$destFolder:=$parentPath
+		
+	End if 
+	
+	If (Length:C16($path)>Length:C16($destFolder))
+		
+		$success:=(Substring:C12($path; 1; Length:C16($destFolder))=$destFolder)
+		
+		If (($success=True:C214)\
+			 & (Not:C34(Is nil pointer:C315($pathPtr))))
+			
+			$pathPtr->:=$parentPath+Substring:C12($path; Length:C16($destFolder)+1; Length:C16($path)-Length:C16($destFolder))
+			
+		End if 
+	End if 
+	
+	return $success
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function strcmp($src : Text; $tgt : Text) : Boolean
@@ -220,10 +355,6 @@ Function strcmp($src : Text; $tgt : Text) : Boolean
 		return Position:C15($src; $tgt; *)=1
 		
 	End if 
-	
-	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function validatepath()
-	
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function encodeReservedFileCharacters($in : Text) : Text
@@ -1090,8 +1221,9 @@ Function GetWidgetMethodInfo($widget : Object; $name : Text) : Integer
 		return 3  // 3 custom
 		
 	End if 
-	
+	var $objmethod : Text
 	$objmethod:=Substring:C12($method; 0; Length:C16($method)-4)
+	var $l : Integer
 	$l:=Length:C16("ObjectMethods/")
 	$objmethod:=Substring:C12($method; $l+1; Length:C16($objmethod)-$l)
 	
@@ -1233,3 +1365,34 @@ Function get groupNames : Collection
 	End if 
 	
 	return $result
+	
+	// MARK:-Tools
+	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Function _meta($test; $target : Text)->$style : Object
+	
+	$style:=New object:C1471(\
+		"stroke"; "Automatic"; \
+		"cell"; New object:C1471(\
+		$target; New object:C1471))
+	
+	Case of 
+			
+			//______________________________________________________
+		: (Value type:C1509($test)=Is object:K8:27)
+			
+			Case of 
+					
+					//…………………………………………………………………………………………………………………
+				: ($target="path")  // Test if the file exists
+					
+					If (Not:C34(File:C1566($test[$target]).exists))
+						
+						$style.cell[$target].stroke:="red"
+						
+					End if 
+					
+					//…………………………………………………………………………………………………………………
+			End case 
+			
+			//______________________________________________________
+	End case 

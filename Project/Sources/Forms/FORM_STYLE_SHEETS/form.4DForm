@@ -52,6 +52,7 @@
 					"currentItemSource": "Form:C1466.current",
 					"currentItemPositionSource": "Form:C1466.position",
 					"selectedItemsSource": "Form:C1466.selected",
+					"metaSource": "Form:C1466.helper._meta(This:C1470; \"path\")",
 					"columns": [
 						{
 							"header": {

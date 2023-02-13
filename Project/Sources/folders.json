@@ -1,20 +1,15 @@
 {
-	"⚙️ EMBEDDED_CSS": {
+	"⚙️ FORM_STYLE_SHEETS": {
 		"forms": [
-			"EMBEDDED_CSS"
+			"FORM_STYLE_SHEETS"
 		],
 		"classes": [
-			"_EmbeddedCSS"
+			"_formStyleSheets"
 		]
 	},
-	"🛠 Tools": {
-		"methods": [
-			"isInsidePackage",
-			"isSubOf",
-			"validatePath"
-		],
+	"🧰 Tools": {
 		"classes": [
-			"_MacroHelper"
+			"_formMacroHelper"
 		]
 	},
 	"trash": {}

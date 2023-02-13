@@ -5,22 +5,23 @@ var $file : 4D:C1709.File
 
 $e:=FORM Event:C1606
 
+var $helper : cs:C1710._formMacroHelper
+$helper:=Form:C1466.helper
+
 Case of 
 		
 		//______________________________________________________
 	: ($e.code=On Load:K2:1)
 		
-		Form:C1466.embedded_css:=Form:C1466.helper.css
-		
 		Form:C1466.list:=New collection:C1472
 		
-		For each ($item; Form:C1466.embedded_css)
+		For each ($item; $helper.css)
 			
 			If (Value type:C1509($item)=Is object:K8:27)
 				
 				Form:C1466.list.push(New object:C1471(\
-					"path"; $css.path; \
-					"media"; $css.media="mac" ? "macOS" : ($css.media="windows" ? "Windows" : "All")))
+					"path"; $item.path; \
+					"media"; $item.media="mac" ? "macOS" : ($item.media="windows" ? "Windows" : "All")))
 				
 			Else 
 				
@@ -54,15 +55,24 @@ Case of
 		Case of 
 				
 				//……………………………………………………………………………………………………………
+			: ($e.objectName="listBox")
+				
+				If ($e.column=1) & (Contextual click:C713)
+					
+					//TODO: Menu Reveal in Desktop…
+					
+				End if 
+				
+				//……………………………………………………………………………………………………………
 			: ($e.objectName="plus")
 				
-				$name:=Select document:C905(String:C10(Form:C1466.form.parent.platformPath); ".css"; "Select CSS File"; Package open:K24:8+Use sheet window:K24:11)
+				$name:=Select document:C905(String:C10($helper.file.parent.platformPath); ".css"; "Select CSS File"; Package open:K24:8+Use sheet window:K24:11)
 				
 				If (Bool:C1537(OK))
 					
 					$file:=File:C1566(DOCUMENT; fk platform path:K87:2)
 					
-					$path:=Form:C1466.validatepath($file.path; Form:C1466.form.parent.path)
+					$path:=$helper.validatePath($file.path; $helper.file.parent.path)
 					
 					If (Length:C16($path)>0)
 						
@@ -80,18 +90,17 @@ Case of
 						
 					Else 
 						
-						If (Not:C34(Form:C1466.isInsidePackage($file.path)))
+						If ($helper.isInsidePackage($file.path))
+							
+							ALERT:C41("The pathname \""+$file.platformPath+"\" is not valid")
+							
+						Else 
 							
 							// Outside of database package, not allowed
 							ALERT:C41("CSS file must be inside the database folder")
 							
-						Else 
-							
-							ALERT:C41("The pathname \""+$file.platformPath+"\" is not valid")
-							
 						End if 
 					End if 
-					
 				End if 
 				
 				//……………………………………………………………………………………………………………
@@ -99,11 +108,6 @@ Case of
 				
 				Form:C1466.list.remove(Form:C1466.position-1)
 				SET TIMER:C645(-1)
-				
-				//……………………………………………………………………………………………………………
-			Else 
-				
-				// A "Case of" statement should never omit "Else"
 				
 				//……………………………………………………………………………………………………………
 		End case 
@@ -115,7 +119,7 @@ Case of
 		
 		If (Form:C1466.list.length=0)
 			
-			Form:C1466.embedded_css:=Null:C1517
+			Form:C1466.css:=Null:C1517
 			return 
 			
 		End if 
@@ -123,7 +127,7 @@ Case of
 		If (Form:C1466.list.length=1)\
 			 && (Form:C1466.list[0].media="All")
 			
-			Form:C1466.embedded_css:=New collection:C1472(Form:C1466.list[0].path)
+			Form:C1466.css:=New collection:C1472(Form:C1466.list[0].path)
 			
 		Else 
 			
@@ -140,7 +144,7 @@ Case of
 				End if 
 			End for each 
 			
-			Form:C1466.embedded_css:=Form:C1466.list
+			Form:C1466.css:=Form:C1466.list
 			
 		End if 
 		
