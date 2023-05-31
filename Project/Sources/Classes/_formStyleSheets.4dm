@@ -1,7 +1,5 @@
 Class extends _formMacroHelper
 
-property macro : Object
-
 Class constructor($macro : Object)
 	
 	Super:C1705($macro)
@@ -17,7 +15,7 @@ Function onInvoke($editor : Object) : Object
 	$data:=New object:C1471(\
 		"result"; False:C215; \
 		"helper"; This:C1470; \
-		"winRef"; This:C1470.openWindow("FORM_STYLE_SHEETS"; Movable form dialog box:K39:8))
+		"winRef"; This:C1470.OpenWindow("FORM_STYLE_SHEETS"; Movable form dialog box:K39:8))
 	
 	DIALOG:C40("FORM_STYLE_SHEETS"; $data)
 	CLOSE WINDOW:C154($data.winRef)

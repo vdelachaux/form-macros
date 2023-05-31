@@ -1,7 +1,10 @@
 {
   "macros": {
-	"Edit Form Style Sheets…": {
-      "class":"_formStyleSheets"
+    "Edit Form Style Sheets\u2026": {
+      "class": "_formStyleSheets"
+    },
+    "Medias": {
+      "class": "_formMedias"
     }
   }
 }

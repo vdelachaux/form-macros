@@ -13,7 +13,7 @@ Case of
 		//______________________________________________________
 	: ($e.code=On Load:K2:1)
 		
-		Form:C1466.list:=New collection:C1472
+		Form:C1466.list:=[]
 		
 		For each ($item; $helper.css)
 			
@@ -55,7 +55,7 @@ Case of
 		Case of 
 				
 				//……………………………………………………………………………………………………………
-			: ($e.objectName="listBox")
+			: ($e.objectName="list")
 				
 				If ($e.column=1) & (Contextual click:C713)
 					
@@ -72,7 +72,7 @@ Case of
 					
 					$file:=File:C1566(DOCUMENT; fk platform path:K87:2)
 					
-					$path:=$helper.validatePath($file.path; $helper.file.parent.path)
+					$path:=$helper.ValidatePath($file.path; $helper.file.parent.path)
 					
 					If (Length:C16($path)>0)
 						

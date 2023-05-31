@@ -23,5 +23,20 @@
 				"editable": true
 			}
 		]
+	},
+	"source": {
+		"editable": false,
+		"items": [
+			{
+				"text": "Global",
+				"ref": 1,
+				"editable": false
+			},
+			{
+				"text": "Local",
+				"ref": 2,
+				"editable": false
+			}
+		]
 	}
 }

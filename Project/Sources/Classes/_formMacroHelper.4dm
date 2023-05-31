@@ -1,5 +1,4 @@
-property form : Object
-property editor : Object
+property editor; form; macro : Object
 
 Class constructor($macro : Object)
 /*
@@ -11,6 +10,15 @@ $macro         Object        Macro declaration object (in the formMacros.json fi
 */
 	
 	This:C1470.macro:=$macro
+	This:C1470.appResources:=Is macOS:C1572\
+		 ? Folder:C1567(Application file:C491; fk platform path:K87:2).folder("Contents/Resources")\
+		 : File:C1566(Application file:C491; fk platform path:K87:2).parent.folder("Resources")
+	
+	// Page number
+	// >=0 look in editor.form[page number]
+	This:C1470.CURRENT_PAGE:=-1  // -1 look in editor.currentPage
+	This:C1470.CURRENT_PAGE_MORE:=-2  // -2 look in editor.currentPage for current page , and editor.form for other
+	This:C1470.ALL_PAGES:=-3  // -3 look in editor.form
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function onInvoke($editor : Object)
@@ -41,7 +49,7 @@ $editor.editor.target              Text          Name of the object under the mo
 	End for each 
 	
 	//=== === === === === === === === === === === === === === === === === === === === === === ===
-Function openWindow($name : Text) : Integer
+Function OpenWindow($name : Text) : Integer
 	
 	// TODO:Center to the current form window
 	return Open form window:C675($name; Movable form dialog box:K39:8)
@@ -95,7 +103,7 @@ Function get default : Object
 	return This:C1470.DefaultValues
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function getDefaultValues($type : Text) : Object
+Function GetDefaultValues($type : Text) : Object
 	
 	This:C1470.DefaultValues:=This:C1470.DefaultValues || This:C1470._defaultValues
 	
@@ -112,14 +120,13 @@ Function get css() : Collection
 	
 	If (This:C1470.editor.formProperties.css=Null:C1517)
 		
-		return New collection:C1472
+		return []
 		
 	End if 
 	
 	If (Value type:C1509(This:C1470.editor.formProperties.css)=Is text:K8:3)
 		
-		return New collection:C1472(New object:C1471(\
-			"path"; This:C1470.editor.formProperties.css))
+		return [{path: This:C1470.editor.formProperties.css}]
 		
 	Else 
 		
@@ -167,7 +174,7 @@ Function get _defaultValues : Object
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get selection : Collection
 	
-	return This:C1470._currentSelection || New collection:C1472
+	return This:C1470._currentSelection || []
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function set selection($sel : Collection)
@@ -192,7 +199,7 @@ Function isSelected($name : Text) : Boolean
 	return This:C1470.selection.indexOf($name)#-1
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function select($name : Text)
+Function Select($name : Text)
 	
 	If (Length:C16($name)=0)
 		
@@ -207,7 +214,7 @@ Function select($name : Text)
 	End if 
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function deselect($name : Text)
+Function Deselect($name : Text)
 	
 	If (Length:C16($name)=0)
 		
@@ -222,7 +229,7 @@ Function deselect($name : Text)
 	End if 
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function selectAll() : Boolean
+Function SelectAll() : Boolean
 	
 	var $name : Text
 	var $sel : Collection
@@ -238,7 +245,7 @@ Function selectAll() : Boolean
 	This:C1470.selection:=$sel
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function deselectAll()
+Function DeselectAll()
 	
 	This:C1470.selection:=New collection:C1472
 	
@@ -246,11 +253,10 @@ Function deselectAll()
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function isInsidePackage($path : Text) : Boolean
 	
-	//return isSubOf($path; "/PACKAGE/")
 	return This:C1470._isSubOf($path; "/PACKAGE/")
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function validatePath($path : Text; $formPath : Text) : Text
+Function ValidatePath($path : Text; $formPath : Text) : Text
 	
 	var $resultPath; $packagePath : Text
 	
@@ -348,7 +354,8 @@ $pathPtr           Pointer       The result posix path
 	return $success
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function strcmp($src : Text; $tgt : Text) : Boolean
+	/// Diacritical comparison
+Function Strcmp($src : Text; $tgt : Text) : Boolean
 	
 	If (Length:C16($src)=Length:C16($tgt))
 		
@@ -356,8 +363,251 @@ Function strcmp($src : Text; $tgt : Text) : Boolean
 		
 	End if 
 	
+	// Mark:-Definitions
+	/// Returns a collection of object names
+Function GetFormObjectNames($pageNumber : Integer) : Collection
+	
+	var $indx : Integer
+	var $page : Object
+	var $c; $pages : Collection
+	
+	// Page number
+	// >=0 look in editor.form[page number]
+	// -1 look in editor.currentPage
+	// -2 look in editor.currentPage for current page , and editor.form for other.
+	// -3 look in editor.form
+	
+	$pages:=This:C1470.editor.form.pages
+	$c:=[]
+	
+	Case of 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pageNumber=This:C1470.CURRENT_PAGE)
+			
+			$c:=$c.concat(This:C1470._getObjectNameInPage(This:C1470.editor.currentPage))
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pages=Null:C1517)
+			
+			// <NOTHING MORE TO DO>
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pageNumber=This:C1470.CURRENT_PAGE_MORE)
+			
+			For each ($page; $pages)
+				
+				If ($indx=This:C1470.currentPageNumber)
+					
+					$page:=This:C1470.editor.currentPage
+					
+				End if 
+				
+				If ($page#Null:C1517)
+					
+					$c:=$c.concat(This:C1470._getObjectNameInPage($page))
+					
+				End if 
+				
+				$indx+=1
+				
+			End for each 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pageNumber=This:C1470.ALL_PAGES)
+			
+			For each ($page; $pages)  //While ($0=Null)
+				
+				$c:=$c.concat(This:C1470._getObjectNameInPage($page))
+				
+			End for each 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		Else 
+			
+			If ($pageNumber<$pages.length)
+				
+				$c:=$c.concat(This:C1470._getObjectNameInPage($pages))
+				
+			End if 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+	End case 
+	
+	return $c
+	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function encodeReservedFileCharacters($in : Text) : Text
+	/// Returns an object from this name
+Function GetFormObject($name : Text; $pageNumber : Integer; $type : Pointer) : Object
+	
+	var $indx : Integer
+	var $o; $page : Object
+	var $pages : Collection
+	
+	// Page number
+	// >=0 look in editor.form[page number]  The returned object is readonly
+	// -1 look in editor.currentPage  The returned object is readonly
+	// -2 look in editor.currentPage for current page , and editor.form for other.returned object can be r/o or r/w
+	// -3 look in editor.form   The returned object is readonly
+	
+	If (Length:C16($name)=0)
+		
+		return 
+		
+	End if 
+	
+	$pages:=This:C1470.editor.form.pages
+	$type->:=""
+	
+	Case of 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pageNumber=This:C1470.CURRENT_PAGE)
+			
+			$o:=This:C1470._getObjectInPage(This:C1470.editor.currentPage; $name; $type)
+			
+			If ($o#Null:C1517)
+				
+				$o.pageNumber:=This:C1470.currentPageNumber
+				
+			End if 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pages=Null:C1517)
+			
+			// <NOTHING MORE TO DO>
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pageNumber=This:C1470.CURRENT_PAGE_MORE)
+			
+			For each ($page; $pages)
+				
+				If ($indx=This:C1470.currentPageNumber)
+					
+					$page:=This:C1470.editor.currentPage
+					
+				End if 
+				
+				If ($page#Null:C1517)
+					
+					$o:=This:C1470._getObjectInPage($page; $name; $type)
+					
+				End if 
+				
+				If ($o#Null:C1517)
+					
+					$o.pageNumber:=$indx
+					break
+					
+				Else 
+					
+					$indx+=1
+					
+				End if 
+			End for each 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pageNumber=This:C1470.ALL_PAGES)
+			
+			For each ($page; $pages)
+				
+				$o:=This:C1470._getObjectInPage($page; $name; $type)
+				
+				If ($o#Null:C1517)
+					
+					$o.pageNumber:=$indx
+					break
+					
+				Else 
+					
+					$indx+=1
+					
+				End if 
+			End for each 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		Else 
+			
+			If ($pageNumber<$pages.length)
+				
+				$o:=This:C1470._getObjectInPage($pages[$pageNumber]; $name; $type)
+				
+				If ($o#Null:C1517)
+					
+					$o.pageNumber:=$pageNumber
+					
+				End if 
+			End if 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+	End case 
+	
+	return $o
+	
+	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Function _getObjectInPage($page : Object; $name : Text; $type : Pointer) : Object
+	
+	var $key : Text
+	var $found : Boolean
+	var $column; $o : Object
+	
+	$type->:=""
+	
+	If ($page=Null:C1517)\
+		 | ($page.objects=Null:C1517)\
+		 | (Length:C16($name)=0)
+		
+		return 
+		
+	End if 
+	
+	For each ($key; $page.objects) While ($found=False:C215)
+		
+		$o:=$page.objects[$key]
+		
+		If ($key=$name)
+			
+			$type->:=$o.type
+			return $o
+			
+		Else 
+			
+			If (This:C1470.Strcmp($o.type; "listbox"))
+				
+				For each ($column; $o.columns)
+					
+					If ($column.name=$name)
+						
+						$type->:="columns"
+						return $column
+						
+					Else 
+						
+						If ($column.header.name=$name)
+							
+							$type->:="header"
+							return $column.header
+							
+						Else 
+							
+							If ($column.footer.name=$name)
+								
+								$type->:="footer"
+								return $column.footer
+								
+							End if 
+						End if 
+					End if 
+				End for each 
+			End if 
+		End if 
+	End for each 
+	
+	
+	
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function EncodeReservedFileCharacters($in : Text) : Text
 	
 	var $hexa; $out; $reserved : Text
 	var $code; $i; $reservedLength : Integer
@@ -403,13 +653,14 @@ Function DecodeReservedFileCharacters($in : Text) : Text
 	var $code; $i; $j; $len; $v : Integer
 	var $o : Object
 	
-	$o:=New object:C1471(\
-		"zero"; Character code:C91("0"); \
-		"nine"; Character code:C91("9"); \
-		"A"; Character code:C91("A"); \
-		"a"; Character code:C91("a"); \
-		"F"; Character code:C91("F"); \
-		"f"; Character code:C91("f"))
+	$o:={\
+		zero: Character code:C91("0"); \
+		nine: Character code:C91("9"); \
+		A: Character code:C91("A"); \
+		a: Character code:C91("a"); \
+		F: Character code:C91("F"); \
+		f: Character code:C91("f")\
+		}
 	
 	$len:=Length:C16($in)
 	
@@ -471,13 +722,13 @@ Function DecodeReservedFileCharacters($in : Text) : Text
 	return $out
 	
 	
-Function _BuildObjectGroups
+Function _buildObjectGroups
 	var $0 : Object
 	var $1 : Integer
 	
-	var $in_PageNumber : Integer
+	var $pageNumber : Integer
 	
-	$in_PageNumber:=$1
+	$pageNumber:=$1
 	
 	var $pageGroup; $page; $allGroups : Object
 	var $objects : Collection
@@ -488,7 +739,7 @@ Function _BuildObjectGroups
 	$done:=False:C215
 	$allGroups:=Null:C1517
 	$pageGroup:=Null:C1517
-	$page:=This:C1470._GetPage($in_PageNumber)
+	$page:=This:C1470._getPage($pageNumber)
 	
 	If ($page#Null:C1517)
 		
@@ -506,8 +757,8 @@ Function _BuildObjectGroups
 					$done:=False:C215
 					For each ($objName; $objects) Until ($done=True:C214)
 						If ($objName#"")
-							If (This:C1470.FormObjectExist($objName; True:C214; ->$foundInPage))
-								If ($foundInPage=$in_PageNumber)
+							If (This:C1470.formObjectExist($objName; True:C214; ->$foundInPage))
+								If ($foundInPage=$pageNumber)
 									OB SET:C1220($pageGroup; $groupName; $objects.copy())
 								End if 
 								$done:=True:C214
@@ -527,92 +778,14 @@ Function _BuildObjectGroups
 	
 	$0:=$pageGroup
 	
-Function _GetPage
-	var $1 : Integer
-	var $0 : Object
-	$0:=Null:C1517
 	
-	If (($1>=0) & ($1<=This:C1470.pageCount))
-		$0:=This:C1470.editor.form.pages[$1]
-	Else 
-		If ($1=-1)
-			$0:=This:C1470.editor.currentPage
-		End if 
-	End if 
-	
-Function _GetObjectInPage
-	
-	var $0; $1 : Object
-	var $2 : Text
-	var $3 : Pointer
-	
-	var $in_page : Object
-	var $in_inName : Text
-	var $out_objecttype : Pointer
-	
-	$in_page:=$1
-	$in_inName:=$2
-	$out_objecttype:=$3
-	
-	var $found : Boolean
-	var $objectName; $objectType : Text
-	var $object; $col : Object
-	
-	$out_objecttype->:=""
-	
-	If (($in_page#Null:C1517) & ($in_inName#""))
-		
-		If ($in_page.objects#Null:C1517)
-			For each ($objectName; $in_page.objects) While ($found=False:C215)
-				
-				$object:=$in_page.objects[$objectName]
-				$objectType:=$object.type
-				
-				//If (This.strcmp($objectName;$in_inName))
-				If ($objectName=$in_inName)
-					$found:=True:C214
-					$0:=$object
-					$out_objecttype->:=$objectType
-				Else 
-					
-					If (This:C1470.strcmp($objectType; "listbox"))
-						For each ($col; $object.columns) While ($found=False:C215)
-							If ($col.name=$in_inName)
-								//If (This.strcmp($col.name;$in_inName))
-								$found:=True:C214
-								$0:=$col
-								$out_objecttype->:="columns"
-							Else 
-								If ($col.header.name=$in_inName)
-									//If (This.strcmp($col.header.name;$in_inName))
-									$found:=True:C214
-									$0:=$col.header
-									$out_objecttype->:="header"
-								Else 
-									If ($col.footer.name=$in_inName)
-										//If (This.strcmp($col.footer.name;$in_inName))
-										$found:=True:C214
-										$0:=$col.footer
-										$out_objecttype->:="footer"
-									End if 
-								End if 
-							End if 
-						End for each 
-						
-					End if 
-				End if 
-				
-			End for each 
-		End if 
-	End if 
-	
-Function _GetObjectNameInPage
+Function _getObjectNameInPage
 	
 	var $0 : Collection
 	var $1 : Object
-	var $in_page : Object
+	var $page : Object
 	
-	$in_page:=$1
+	$page:=$1
 	
 	var $found : Boolean
 	var $objectName; $objectType : Text
@@ -620,15 +793,15 @@ Function _GetObjectNameInPage
 	
 	$0:=New collection:C1472
 	
-	If (($in_page#Null:C1517))
+	If (($page#Null:C1517))
 		
-		If ($in_page.objects#Null:C1517)
-			For each ($objectName; $in_page.objects)
-				$object:=$in_page.objects[$objectName]
+		If ($page.objects#Null:C1517)
+			For each ($objectName; $page.objects)
+				$object:=$page.objects[$objectName]
 				
 				$0.push($objectName)
 				
-				If (This:C1470.strcmp($object.type; "listbox"))
+				If (This:C1470.Strcmp($object.type; "listbox"))
 					// not a good practice, but
 					// sub object can have empty or not defined name. In this case , unique name will be generated when form will be loaded
 					
@@ -684,168 +857,41 @@ Function GetObjectDefaultValues
 	End if 
 	
 	
-Function GetFormObject
-	var $0 : Object
-	var $1 : Text
-	var $2 : Integer
-	var $3 : Pointer
-	
-	var $in_objectName : Text
-	var $in_pageNumber : Integer
-	var $out_objectType : Pointer
-	
-	$in_objectName:=$1
-	$in_pageNumber:=$2
-	$out_objectType:=$3
-	
-	var $page : Object
-	var $pagelist : Collection
-	var $indx : Integer
-	
-	// page number
-	// >=0 look in editor.form[page number]  The returned object is readonly
-	// -1 look in editor.currentPage  The returned object is readonly  
-	// -2 look in editor.currentPage for current page , and editor.form for other.returned object can be r/o or r/w
-	//  -3 look in editor.form   The returned object is readonly
-	
-	$out_objectType->:=""
-	
-	If ($in_objectName#"")
-		
-		Case of 
-				
-			: ($in_pageNumber=-1)
-				$0:=This:C1470._GetObjectInPage(This:C1470.editor.currentPage; $in_objectName; $out_objectType)
-				
-			: ($in_pageNumber=-2)
-				
-				$pagelist:=This:C1470.editor.form.pages
-				If ($pagelist#Null:C1517)
-					$indx:=0
-					For each ($page; $pagelist) While ($0=Null:C1517)
-						If ($indx=This:C1470.currentPageNumber)
-							$page:=This:C1470.editor.currentPage
-						End if 
-						If ($page#Null:C1517)
-							$0:=This:C1470._GetObjectInPage($page; $in_objectName; $out_objectType)
-						End if 
-						$indx:=$indx+1
-					End for each 
-				End if 
-			: ($in_pageNumber=-3)
-				
-				$pagelist:=This:C1470.editor.form.pages
-				If ($pagelist#Null:C1517)
-					$indx:=0
-					For each ($page; $pagelist) While ($0=Null:C1517)
-						$0:=This:C1470._GetObjectInPage($page; $in_objectName; $out_objectType)
-					End for each 
-				End if 
-			Else 
-				
-				$pagelist:=This:C1470.editor.form.pages
-				If ($pagelist#Null:C1517)
-					If ($in_pageNumber<$pagelist.length)
-						$0:=This:C1470._GetObjectInPage($pagelist[$in_pageNumber]; $in_objectName; $out_objectType)
-					End if 
-				End if 
-				
-		End case 
-	End if 
 	
 	
-Function GetFormObjectNames
-	var $0 : Collection
-	var $1 : Integer
-	
-	var $in_pageNumber : Integer
-	
-	$in_pageNumber:=$1
-	
-	var $page : Object
-	var $pagelist; $col : Collection
-	var $indx; $curpagenumber : Integer
-	
-	// page number
-	// >=0 look in editor.form[page number] 
-	// -1 look in editor.currentPage
-	// -2 look in editor.currentPage for current page , and editor.form for other.
-	//  -3 look in editor.form 
-	
-	$0:=New collection:C1472
-	
-	Case of 
-			
-		: ($in_pageNumber=-1)
-			$0:=$0.concat(This:C1470._GetObjectNameInPage(This:C1470.editor.currentPage))
-			
-		: ($in_pageNumber=-2)
-			
-			$pagelist:=This:C1470.editor.form.pages
-			If ($pagelist#Null:C1517)
-				$indx:=0
-				For each ($page; $pagelist)
-					If ($indx=This:C1470.currentPageNumber)
-						$page:=This:C1470.editor.currentPage
-					End if 
-					If ($page#Null:C1517)
-						$0:=$0.concat(This:C1470._GetObjectNameInPage($page))
-					End if 
-					$indx:=$indx+1
-				End for each 
-			End if 
-		: ($in_pageNumber=-3)
-			
-			$pagelist:=This:C1470.editor.form.pages
-			If ($pagelist#Null:C1517)
-				$indx:=0
-				For each ($page; $pagelist) While ($0=Null:C1517)
-					$0:=$0.concat(This:C1470._GetObjectNameInPage($page))
-				End for each 
-			End if 
-		Else 
-			
-			$pagelist:=This:C1470.editor.form.pages
-			If ($pagelist#Null:C1517)
-				If ($in_pageNumber<$pagelist.length)
-					$0:=$0.concat(This:C1470._GetObjectNameInPage($pagelist))
-				End if 
-			End if 
-			
-	End case 
 	
 	
-Function FormObjectExist
+Function formObjectExist
 	
 	var $0; $2 : Boolean
 	var $1 : Text
 	var $3 : Pointer
 	
-	var $in_inName : Text
+	var $name : Text
 	var $in_useCurrentPage : Boolean
 	var $out_pageNumber : Pointer
 	var $pageNumber : Integer
 	
 	
-	$in_inName:=$1
+	$name:=$1
 	$in_useCurrentPage:=$2
 	
 	If (Count parameters:C259=3)
 		$out_pageNumber:=$3
 	End if 
 	
-	var $pagelist : Collection
+	var $pages : Collection
 	var $indx : Integer
 	var $page; $object : Object
 	var $objectType : Text
 	
 	$0:=False:C215
 	
-	If ($in_inName#"")
+	If ($name#"")
 		If (This:C1470.editor.form.pages#Null:C1517)
-			$pagelist:=This:C1470.editor.form.pages
+			$pages:=This:C1470.editor.form.pages
 			$indx:=0
-			For each ($page; $pagelist) While ($0=False:C215)
+			For each ($page; $pages) While ($0=False:C215)
 				
 				If (($in_useCurrentPage=True:C214) & ($indx=This:C1470.currentPageNumber))
 					$page:=This:C1470.editor.currentPage
@@ -855,7 +901,7 @@ Function FormObjectExist
 				End if 
 				
 				If ($page#Null:C1517)
-					$object:=This:C1470._GetObjectInPage($page; $in_inName; ->$objectType)
+					$object:=This:C1470._getObjectInPage($page; $name; ->$objectType)
 				End if 
 				
 				$0:=($object#Null:C1517)
@@ -892,7 +938,7 @@ Function MakeUniqueObjectName
 	var $counter : Integer
 	
 	// important
-	// this code don't use strict string compare (This.strcmp) 
+	// this code don't use strict string compare (This.Strcmp) 
 	// because 4D object name is not case sensitive 
 	
 	
@@ -933,7 +979,7 @@ Function MakeUniqueObjectName
 				
 				// test method file name
 				If (($in_withFreeMethodFile) & ($found=False:C215))
-					$tmpScriptName:=This:C1470.encodeReservedFileCharacters($tmpName)
+					$tmpScriptName:=This:C1470.EncodeReservedFileCharacters($tmpName)
 					$found:=(Test path name:C476($methodfolderpath+$tmpScriptName+".4dm")=Is a document:K24:1)
 				End if 
 				
@@ -979,7 +1025,7 @@ Function InsertFormObjectAfter
 				$newObjects:=New object:C1471
 				For each ($property; $objects)
 					$newObjects[$property]:=$objects[$property]
-					If (This:C1470.strcmp($property; $in_afterObjectName))
+					If (This:C1470.Strcmp($property; $in_afterObjectName))
 						$newObjects[$in_newObjectName]:=$in_newObject
 					End if 
 				End for each 
@@ -1018,7 +1064,7 @@ Function InsertFormObjectBefore
 			
 			For each ($property; $objects)
 				If ($in_beforeObjectName#"")
-					If (This:C1470.strcmp($property; $in_beforeObjectName))
+					If (This:C1470.Strcmp($property; $in_beforeObjectName))
 						$newObjects[$in_newObjectName]:=$in_newObject
 					End if 
 				End if 
@@ -1044,12 +1090,12 @@ Function RenameObject
 	
 	$0:=False:C215
 	
-	If (This:C1470.FormObjectExist($in_OldName; True:C214))
-		If (Not:C34(This:C1470.FormObjectExist($in_NewName; True:C214)))
+	If (This:C1470.formObjectExist($in_OldName; True:C214))
+		If (Not:C34(This:C1470.formObjectExist($in_NewName; True:C214)))
 			$objects:=This:C1470.editor.currentPage.objects
 			$newObjects:=New object:C1471
 			For each ($property; $objects)
-				//If (This.strcmp($property;$in_OldName))
+				//If (This.Strcmp($property;$in_OldName))
 				If ($property=$in_OldName)
 					$newObjects[$in_NewName]:=$objects[$property]
 				Else 
@@ -1060,8 +1106,8 @@ Function RenameObject
 			This:C1470.editor.currentPage.objects:=$newObjects
 			
 			If (This:C1470.isSelected($in_OldName))
-				This:C1470.deselect($in_OldName)
-				This:C1470.select($in_NewName)
+				This:C1470.Deselect($in_OldName)
+				This:C1470.Select($in_NewName)
 			End if 
 			
 			$indx:=This:C1470.FindInEntryOrder($in_OldName)
@@ -1227,9 +1273,9 @@ Function GetWidgetMethodInfo($widget : Object; $name : Text) : Integer
 	$l:=Length:C16("ObjectMethods/")
 	$objmethod:=Substring:C12($method; $l+1; Length:C16($objmethod)-$l)
 	
-	$pathname:=This:C1470.encodeReservedFileCharacters($name)
+	$pathname:=This:C1470.EncodeReservedFileCharacters($name)
 	
-	If (This:C1470.strcmp($objmethod; $pathname))
+	If (This:C1470.Strcmp($objmethod; $pathname))
 		
 		return 1  // 1 std method : methode name match object name, object method file is the ObjectMethods folder
 		
@@ -1249,11 +1295,13 @@ Function GetWidgetMethodInfo($widget : Object; $name : Text) : Integer
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get entryOrder : Collection
 	
+	//TODO:Return an empty collection if null?
 	return This:C1470.editor.currentPage.entryOrder
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function set entryOrder($entryOrder : Collection)
 	
+	//TODO:Remove property if null?
 	This:C1470.editor.currentPage.entryOrder:=$entryOrder
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
@@ -1268,7 +1316,7 @@ Function InsertInEntryOrderAfter($name : Text; $after : Text) : Boolean
 		
 	End if 
 	
-	$entryOrder:=This:C1470.editor.currentPage.entryOrder | New collection:C1472
+	$entryOrder:=This:C1470.editor.currentPage.entryOrder | []
 	
 	If ($entryOrder.indexOf($name)=-1)
 		
@@ -1294,7 +1342,7 @@ Function InsertInEntryOrderBefore($name : Text; $after : Text) : Boolean
 		
 	End if 
 	
-	$entryOrder:=This:C1470.editor.currentPage.entryOrder | New collection:C1472
+	$entryOrder:=This:C1470.editor.currentPage.entryOrder | []
 	
 	If ($entryOrder.indexOf($name)=-1)
 		
@@ -1339,7 +1387,7 @@ Function get groupNames : Collection
 	var $groups : Object
 	var $result : Collection
 	
-	$result:=New collection:C1472
+	$result:=[]
 	
 	If (This:C1470.editor.editor#Null:C1517)
 		
@@ -1368,12 +1416,32 @@ Function get groupNames : Collection
 	
 	// MARK:-Tools
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
-Function _meta($test; $target : Text)->$style : Object
+	/// Returns a page object from its number
+Function _getPage($pageNumber : Integer) : Object
 	
-	$style:=New object:C1471(\
-		"stroke"; "Automatic"; \
-		"cell"; New object:C1471(\
-		$target; New object:C1471))
+	If (($pageNumber>=0)\
+		 & ($pageNumber<=This:C1470.pageCount))
+		
+		return This:C1470.editor.form.pages[$pageNumber]
+		
+	Else 
+		
+		If ($pageNumber=This:C1470.CURRENT_PAGE)
+			
+			return This:C1470.editor.currentPage
+			
+		End if 
+	End if 
+	
+	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Function _meta($test; $target : Text) : Object
+	
+	var $style : Object
+	
+	$style:={\
+		stroke: "Automatic"; \
+		cell: New object:C1471($target; {})\
+		}
 	
 	Case of 
 			
@@ -1392,7 +1460,17 @@ Function _meta($test; $target : Text)->$style : Object
 					End if 
 					
 					//…………………………………………………………………………………………………………………
+				: ($target="media")  // Test if the media exists
+					
+					If (Not:C34($test[$target].exists))
+						
+						$style.cell[$target].stroke:="red"
+						
+					End if 
+					//…………………………………………………………………………………………………………………
 			End case 
 			
 			//______________________________________________________
 	End case 
+	
+	return $style

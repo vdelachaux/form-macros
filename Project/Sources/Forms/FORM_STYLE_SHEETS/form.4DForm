@@ -28,7 +28,7 @@
 		},
 		{
 			"objects": {
-				"listBox": {
+				"list": {
 					"type": "listbox",
 					"left": 0,
 					"top": 0,
@@ -132,7 +132,7 @@
 			}
 		}
 	],
-	"geometryStamp": 147,
+	"geometryStamp": 148,
 	"editor": {
 		"activeView": "View 1",
 		"defaultView": "View 1",
