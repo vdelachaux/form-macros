@@ -1,5 +1,13 @@
 {
-	"⚙️ FORM_STYLE_SHEETS": {
+	"⚙️ MEDIAS": {
+		"forms": [
+			"FORM_MEDIAS"
+		],
+		"classes": [
+			"_formMedias"
+		]
+	},
+	"⚙️ STYLE SHEETS": {
 		"forms": [
 			"FORM_STYLE_SHEETS"
 		],

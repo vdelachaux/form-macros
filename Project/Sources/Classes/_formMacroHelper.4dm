@@ -10,9 +10,15 @@ $macro         Object        Macro declaration object (in the formMacros.json fi
 */
 	
 	This:C1470.macro:=$macro
+	
+	This:C1470.resourcesFolder:=Folder:C1567(Folder:C1567(fk resources folder:K87:11; *).platformPath; fk platform path:K87:2)  // Un-sandboxed
+	
 	This:C1470.appResources:=Is macOS:C1572\
 		 ? Folder:C1567(Application file:C491; fk platform path:K87:2).folder("Contents/Resources")\
 		 : File:C1566(Application file:C491; fk platform path:K87:2).parent.folder("Resources")
+	
+	This:C1470.FORM:=Null:C1517
+	This:C1470.DATA:=Null:C1517
 	
 	// Page number
 	// >=0 look in editor.form[page number]
@@ -48,11 +54,18 @@ $editor.editor.target              Text          Name of the object under the mo
 		
 	End for each 
 	
-	//=== === === === === === === === === === === === === === === === === === === === === === ===
-Function OpenWindow($name : Text) : Integer
-	
-	// TODO:Center to the current form window
-	return Open form window:C675($name; Movable form dialog box:K39:8)
+	// MARK:Display UI
+	If (This:C1470.FORM#Null:C1517)
+		
+		This:C1470.DATA:=New object:C1471(\
+			"result"; False:C215; \
+			"helper"; This:C1470; \
+			"winRef"; This:C1470.OpenWindow(This:C1470.FORM; Movable form dialog box:K39:8))
+		
+		DIALOG:C40(This:C1470.FORM; This:C1470.DATA)
+		CLOSE WINDOW:C154(This:C1470.DATA.winRef)
+		
+	End if 
 	
 	//=== === === === === === === === === === === === === === === === === === === === === === ===
 Function onError($editor : Object; $result : Object; $errors : Collection)
@@ -70,6 +83,12 @@ $error.componentSignature     Text          Internal component signature
 */
 	
 	ALERT:C41($errors.extract("message").join("\n"))
+	
+	//=== === === === === === === === === === === === === === === === === === === === === === ===
+Function OpenWindow($name : Text) : Integer
+	
+	// TODO:Center to the current form window
+	return Open form window:C675($name; Movable form dialog box:K39:8; Horizontally centered:K39:1; Vertically centered:K39:4; *)
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get file() : 4D:C1709.File
@@ -102,18 +121,17 @@ Function get default : Object
 	This:C1470.DefaultValues:=This:C1470.DefaultValues || This:C1470._defaultValues
 	return This:C1470.DefaultValues
 	
-	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function GetDefaultValues($type : Text) : Object
+	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Function get _defaultValues : Object
 	
-	This:C1470.DefaultValues:=This:C1470.DefaultValues || This:C1470._defaultValues
+	var $file : 4D:C1709.File
+	$file:=This:C1470.appResources.file("DefaultJsonForm.json")
 	
-	If (This:C1470.DefaultValues=Null:C1517)
+	If ($file.exists)
 		
-		return 
+		return JSON Parse:C1218($file.getText())
 		
 	End if 
-	
-	return $type ? This:C1470.DefaultValues[$type] : This:C1470.DefaultValues
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get css() : Collection
@@ -156,20 +174,6 @@ Function set css($css : Collection)
 			//______________________________________________________
 	End case 
 	
-	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
-Function get _defaultValues : Object
-	
-	var $file : 4D:C1709.File
-	
-	$file:=Folder:C1567(Application file:C491; fk platform path:K87:2).parent\
-		.file(Is Windows:C1573 ? "Resources/DefaultJsonForm.json" : "Contents/Resources/DefaultJsonForm.json")
-	
-	If ($file.exists)
-		
-		return JSON Parse:C1218($file.getText())
-		
-	End if 
-	
 	// Mark:-Selection
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get selection : Collection
@@ -179,24 +183,10 @@ Function get selection : Collection
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function set selection($sel : Collection)
 	
-	This:C1470.editor.currentSelection:=$sel
-	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get selectedObjectCount : Integer
 	
 	return This:C1470._currentSelection.length
-	
-	// Mark:-Widgets
-	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function isSelected($name : Text) : Boolean
-	
-	If (Length:C16($name)=0)
-		
-		return 
-		
-	End if 
-	
-	return This:C1470.selection.indexOf($name)#-1
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function Select($name : Text)
@@ -234,7 +224,7 @@ Function SelectAll() : Boolean
 	var $name : Text
 	var $sel : Collection
 	
-	$sel:=New collection:C1472
+	$sel:=[]
 	
 	For each ($name; This:C1470.editor.currentPage.objects)
 		
@@ -247,7 +237,7 @@ Function SelectAll() : Boolean
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function DeselectAll()
 	
-	This:C1470.selection:=New collection:C1472
+	This:C1470.selection:=[]
 	
 	// Mark:-Tools
 	// === === === === === === === === === === === === === === === === === === === === === === ===
@@ -353,18 +343,8 @@ $pathPtr           Pointer       The result posix path
 	
 	return $success
 	
-	// === === === === === === === === === === === === === === === === === === === === === === ===
-	/// Diacritical comparison
-Function Strcmp($src : Text; $tgt : Text) : Boolean
-	
-	If (Length:C16($src)=Length:C16($tgt))
-		
-		return Position:C15($src; $tgt; *)=1
-		
-	End if 
-	
-	// Mark:-Definitions
-	/// Returns a collection of object names
+	// Mark:-Widgets
+	/// Returns a collection of widget names
 Function GetFormObjectNames($pageNumber : Integer) : Collection
 	
 	var $indx : Integer
@@ -393,6 +373,15 @@ Function GetFormObjectNames($pageNumber : Integer) : Collection
 			// <NOTHING MORE TO DO>
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pageNumber=This:C1470.ALL_PAGES)
+			
+			For each ($page; $pages)  //While ($0=Null)
+				
+				$c:=$c.concat(This:C1470._getObjectNameInPage($page))
+				
+			End for each 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 		: ($pageNumber=This:C1470.CURRENT_PAGE_MORE)
 			
 			For each ($page; $pages)
@@ -414,15 +403,6 @@ Function GetFormObjectNames($pageNumber : Integer) : Collection
 			End for each 
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-		: ($pageNumber=This:C1470.ALL_PAGES)
-			
-			For each ($page; $pages)  //While ($0=Null)
-				
-				$c:=$c.concat(This:C1470._getObjectNameInPage($page))
-				
-			End for each 
-			
-			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 		Else 
 			
 			If ($pageNumber<$pages.length)
@@ -436,9 +416,8 @@ Function GetFormObjectNames($pageNumber : Integer) : Collection
 	
 	return $c
 	
-	// === === === === === === === === === === === === === === === === === === === === === === ===
-	/// Returns an object from this name
-Function GetFormObject($name : Text; $pageNumber : Integer; $type : Pointer) : Object
+	/// Returns an widget object from this name
+Function GetFormObject($name : Text; $pageNumber : Integer) : Object
 	
 	var $indx : Integer
 	var $o; $page : Object
@@ -457,14 +436,13 @@ Function GetFormObject($name : Text; $pageNumber : Integer; $type : Pointer) : O
 	End if 
 	
 	$pages:=This:C1470.editor.form.pages
-	$type->:=""
 	
 	Case of 
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 		: ($pageNumber=This:C1470.CURRENT_PAGE)
 			
-			$o:=This:C1470._getObjectInPage(This:C1470.editor.currentPage; $name; $type)
+			$o:=This:C1470._getObjectInPage(This:C1470.editor.currentPage; $name)
 			
 			If ($o#Null:C1517)
 				
@@ -490,7 +468,7 @@ Function GetFormObject($name : Text; $pageNumber : Integer; $type : Pointer) : O
 				
 				If ($page#Null:C1517)
 					
-					$o:=This:C1470._getObjectInPage($page; $name; $type)
+					$o:=This:C1470._getObjectInPage($page; $name)
 					
 				End if 
 				
@@ -511,7 +489,7 @@ Function GetFormObject($name : Text; $pageNumber : Integer; $type : Pointer) : O
 			
 			For each ($page; $pages)
 				
-				$o:=This:C1470._getObjectInPage($page; $name; $type)
+				$o:=This:C1470._getObjectInPage($page; $name)
 				
 				If ($o#Null:C1517)
 					
@@ -522,6 +500,8 @@ Function GetFormObject($name : Text; $pageNumber : Integer; $type : Pointer) : O
 					
 					$indx+=1
 					
+					
+					
 				End if 
 			End for each 
 			
@@ -530,7 +510,9 @@ Function GetFormObject($name : Text; $pageNumber : Integer; $type : Pointer) : O
 			
 			If ($pageNumber<$pages.length)
 				
-				$o:=This:C1470._getObjectInPage($pages[$pageNumber]; $name; $type)
+				$o:=This:C1470._getObjectInPage($pages[$pageNumber]; $name)
+				
+				
 				
 				If ($o#Null:C1517)
 					
@@ -544,14 +526,93 @@ Function GetFormObject($name : Text; $pageNumber : Integer; $type : Pointer) : O
 	
 	return $o
 	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+	/// Returns default values object of a widget from this type
+Function GetformObjectDefaultValues($type : Text) : Object
+	
+	This:C1470.DefaultValues:=This:C1470.DefaultValues || This:C1470._defaultValues
+	
+	If (This:C1470.DefaultValues=Null:C1517)
+		
+		return 
+		
+	End if 
+	
+	return $type ? This:C1470.DefaultValues[$type] : This:C1470.DefaultValues
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+	/// Returns True if a widget exists under this name
+Function formObjectExist($name : Text; $in_useCurrentPage : Boolean; $pageCollator : Pointer) : Boolean
+	
+	var $indx : Integer
+	var $object; $page : Object
+	
+	If ($name="")\
+		 | (This:C1470.editor.form.pagesNull)
+		
+		return 
+		
+	End if 
+	
+	For each ($page; This:C1470.editor.form.pages)
+		
+		If (($in_useCurrentPage=True:C214)\
+			 & ($indx=This:C1470.currentPageNumber))
+			
+			$page:=This:C1470.editor.currentPage
+			$indx:=-1
+			
+		Else 
+			
+		End if 
+		
+		If ($page#Null:C1517)
+			
+			$object:=This:C1470._getObjectInPage($page; $name)
+			
+		End if 
+		
+		If ($object#Null:C1517)
+			
+			If (Count parameters:C259=3) && (Not:C34(Is nil pointer:C315($pageCollator)))
+				
+				$pageCollator->:=$indx
+				
+			End if 
+			
+			return True:C214
+			
+		End if 
+		
+		$indx+=1
+		
+	End for each 
+	
+	If (Count parameters:C259=3) && (Not:C34(Is nil pointer:C315($pageCollator)))
+		
+		$pageCollator->:=$indx
+		
+	End if 
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function isFormObjectSelected($name : Text) : Boolean
+	
+	If (Length:C16($name)=0)
+		
+		return 
+		
+	End if 
+	
+	return This:C1470.selection.indexOf($name)#-1
+	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
-Function _getObjectInPage($page : Object; $name : Text; $type : Pointer) : Object
+Function _getObjectInPage($page : Object; $name : Text) : Object
 	
 	var $key : Text
 	var $found : Boolean
 	var $column; $o : Object
 	
-	$type->:=""
+	//$type->:=""
 	
 	If ($page=Null:C1517)\
 		 | ($page.objects=Null:C1517)\
@@ -567,7 +628,7 @@ Function _getObjectInPage($page : Object; $name : Text; $type : Pointer) : Objec
 		
 		If ($key=$name)
 			
-			$type->:=$o.type
+			//$type->:=$o.type
 			return $o
 			
 		Else 
@@ -578,21 +639,24 @@ Function _getObjectInPage($page : Object; $name : Text; $type : Pointer) : Objec
 					
 					If ($column.name=$name)
 						
-						$type->:="columns"
+						//$type->:="columns"
+						$o.type:="columns"
 						return $column
 						
 					Else 
 						
 						If ($column.header.name=$name)
 							
-							$type->:="header"
+							//$type->:="header"
+							$o.type:="header"
 							return $column.header
 							
 						Else 
 							
 							If ($column.footer.name=$name)
 								
-								$type->:="footer"
+								//$type->:="footer"
+								$o.type:="footer"
 								return $column.footer
 								
 							End if 
@@ -602,125 +666,6 @@ Function _getObjectInPage($page : Object; $name : Text; $type : Pointer) : Objec
 			End if 
 		End if 
 	End for each 
-	
-	
-	
-	
-	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function EncodeReservedFileCharacters($in : Text) : Text
-	
-	var $hexa; $out; $reserved : Text
-	var $code; $i; $reservedLength : Integer
-	
-	$reserved:="1111111111"*3
-	$reserved+="1100100100"
-	$reserved+="0010000100"
-	$reserved+="0000000010"
-	$reserved+="1011000000"
-	$reserved+=("0000000000"*2)
-	$reserved+="0010000000"
-	$reserved+=("0000000000"*2)
-	$reserved+="000010000"
-	
-	$hexa:="0123456789ABCDEF"
-	
-	$reservedLength:=Length:C16($reserved)
-	
-	For ($i; 1; Length:C16($in); 1)
-		
-		$code:=Character code:C91($in[[$i]])
-		
-		If ($code<$reservedLength)\
-			 & ($reserved[[$code+1]]#"0")
-			
-			$out+="%"
-			$out+=$hexa[[($code\16)+1]]
-			$out+=$hexa[[($code%16)+1]]
-			
-		Else 
-			
-			$out+=Char:C90($code)
-			
-		End if 
-	End for 
-	
-	return $out
-	
-	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function DecodeReservedFileCharacters($in : Text) : Text
-	
-	var $out : Text
-	var $code; $i; $j; $len; $v : Integer
-	var $o : Object
-	
-	$o:={\
-		zero: Character code:C91("0"); \
-		nine: Character code:C91("9"); \
-		A: Character code:C91("A"); \
-		a: Character code:C91("a"); \
-		F: Character code:C91("F"); \
-		f: Character code:C91("f")\
-		}
-	
-	$len:=Length:C16($in)
-	
-	For ($i; 1; $len; 1)
-		
-		If ($in[[$i]]="%")
-			
-			If (($i+2)<=$len)
-				
-				$v:=0
-				
-				For ($j; 1; 2; 1)
-					
-					$code:=Character code:C91($in[[$i+$j]])
-					
-					Case of 
-							
-							//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-						: (($code>=$o.zero)\
-							 && ($code<$o.nine))
-							
-							$v*=16
-							$v+=($code-$o.zero)
-							
-							//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-						: (($code>=$o.A)\
-							 && ($code<$o.F))
-							
-							$v*=16
-							$v+=($code-$o.A)+10
-							
-							//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-						: (($code>=$o.a)\
-							 && ($code<$o.f))
-							
-							$v*=16
-							$v+=($code-$o.a)+10
-							
-							//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-					End case 
-				End for 
-				
-				$out:=$out+Char:C90($v)
-				$i+=2
-				
-			Else 
-				
-				$out:=$out+$in[[$i]]
-				
-			End if 
-			
-		Else 
-			
-			$out:=$out+$in[[$i]]
-			
-		End if 
-	End for 
-	
-	return $out
-	
 	
 Function _buildObjectGroups
 	var $0 : Object
@@ -825,97 +770,6 @@ Function _getObjectNameInPage
 		End if 
 	End if 
 	
-Function GetObjectDefaultValues
-	var $0 : Object
-	var $1 : Text
-	
-	var $in_objecttype : Text
-	
-	$in_objecttype:=$1
-	
-	var $DefaultJsonFormPath; $txt : Text
-	
-	If (This:C1470.DefaultValues=Null:C1517)
-		Case of 
-			: (Is Windows:C1573)
-				$DefaultJsonFormPath:=(Path to object:C1547(Application file:C491; Path is system:K24:25).parentFolder)+"Resources"+Folder separator:K24:12+"DefaultJsonForm.json"
-			: (Is macOS:C1572)
-				$DefaultJsonFormPath:=Application file:C491+Folder separator:K24:12+"Contents"+Folder separator:K24:12+"Resources"+Folder separator:K24:12+"DefaultJSONForm.json"
-		End case 
-		If ($DefaultJsonFormPath#"")
-			$txt:=File:C1566($DefaultJsonFormPath; fk platform path:K87:2).getText()
-			This:C1470.DefaultValues:=JSON Parse:C1218($txt; Is object:K8:27)
-		End if 
-	End if 
-	
-	If (This:C1470.DefaultValues#Null:C1517)
-		If ($in_objecttype#"")
-			$0:=This:C1470.DefaultValues[$in_objecttype]
-		Else 
-			$0:=This:C1470.DefaultValues
-		End if 
-	End if 
-	
-	
-	
-	
-	
-	
-Function formObjectExist
-	
-	var $0; $2 : Boolean
-	var $1 : Text
-	var $3 : Pointer
-	
-	var $name : Text
-	var $in_useCurrentPage : Boolean
-	var $out_pageNumber : Pointer
-	var $pageNumber : Integer
-	
-	
-	$name:=$1
-	$in_useCurrentPage:=$2
-	
-	If (Count parameters:C259=3)
-		$out_pageNumber:=$3
-	End if 
-	
-	var $pages : Collection
-	var $indx : Integer
-	var $page; $object : Object
-	var $objectType : Text
-	
-	$0:=False:C215
-	
-	If ($name#"")
-		If (This:C1470.editor.form.pages#Null:C1517)
-			$pages:=This:C1470.editor.form.pages
-			$indx:=0
-			For each ($page; $pages) While ($0=False:C215)
-				
-				If (($in_useCurrentPage=True:C214) & ($indx=This:C1470.currentPageNumber))
-					$page:=This:C1470.editor.currentPage
-					$indx:=-1
-				Else 
-					
-				End if 
-				
-				If ($page#Null:C1517)
-					$object:=This:C1470._getObjectInPage($page; $name; ->$objectType)
-				End if 
-				
-				$0:=($object#Null:C1517)
-				
-				If (Not:C34($0))
-					$indx:=$indx+1
-				End if 
-				
-			End for each 
-		End if 
-	End if 
-	If (Not:C34(Is nil pointer:C315($out_pageNumber)))
-		$out_pageNumber->:=$indx
-	End if 
 	
 	
 Function MakeUniqueObjectName
@@ -1415,6 +1269,131 @@ Function get groupNames : Collection
 	return $result
 	
 	// MARK:-Tools
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function EncodeReservedFileCharacters($in : Text) : Text
+	
+	var $hexa; $out; $reserved : Text
+	var $code; $i; $reservedLength : Integer
+	
+	$reserved:="1111111111"*3
+	$reserved+="1100100100"
+	$reserved+="0010000100"
+	$reserved+="0000000010"
+	$reserved+="1011000000"
+	$reserved+=("0000000000"*2)
+	$reserved+="0010000000"
+	$reserved+=("0000000000"*2)
+	$reserved+="000010000"
+	
+	$hexa:="0123456789ABCDEF"
+	
+	$reservedLength:=Length:C16($reserved)
+	
+	For ($i; 1; Length:C16($in); 1)
+		
+		$code:=Character code:C91($in[[$i]])
+		
+		If ($code<$reservedLength)\
+			 & ($reserved[[$code+1]]#"0")
+			
+			$out+="%"
+			$out+=$hexa[[($code\16)+1]]
+			$out+=$hexa[[($code%16)+1]]
+			
+		Else 
+			
+			$out+=Char:C90($code)
+			
+		End if 
+	End for 
+	
+	return $out
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function DecodeReservedFileCharacters($in : Text) : Text
+	
+	var $out : Text
+	var $code; $i; $j; $len; $v : Integer
+	var $o : Object
+	
+	$o:={\
+		zero: Character code:C91("0"); \
+		nine: Character code:C91("9"); \
+		A: Character code:C91("A"); \
+		a: Character code:C91("a"); \
+		F: Character code:C91("F"); \
+		f: Character code:C91("f")\
+		}
+	
+	$len:=Length:C16($in)
+	
+	For ($i; 1; $len; 1)
+		
+		If ($in[[$i]]="%")
+			
+			If (($i+2)<=$len)
+				
+				$v:=0
+				
+				For ($j; 1; 2; 1)
+					
+					$code:=Character code:C91($in[[$i+$j]])
+					
+					Case of 
+							
+							//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+						: (($code>=$o.zero)\
+							 && ($code<$o.nine))
+							
+							$v*=16
+							$v+=($code-$o.zero)
+							
+							//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+						: (($code>=$o.A)\
+							 && ($code<$o.F))
+							
+							$v*=16
+							$v+=($code-$o.A)+10
+							
+							//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+						: (($code>=$o.a)\
+							 && ($code<$o.f))
+							
+							$v*=16
+							$v+=($code-$o.a)+10
+							
+							//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+					End case 
+				End for 
+				
+				$out:=$out+Char:C90($v)
+				$i+=2
+				
+			Else 
+				
+				$out:=$out+$in[[$i]]
+				
+			End if 
+			
+		Else 
+			
+			$out:=$out+$in[[$i]]
+			
+		End if 
+	End for 
+	
+	return $out
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+	/// Diacritical comparison
+Function Strcmp($src : Text; $tgt : Text) : Boolean
+	
+	If (Length:C16($src)=Length:C16($tgt))
+		
+		return Position:C15($src; $tgt; *)=1
+		
+	End if 
+	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 	/// Returns a page object from its number
 Function _getPage($pageNumber : Integer) : Object

@@ -32,19 +32,28 @@
 	"destination": "detailScreen",
 	"pages": [
 		{
-			"objects": {}
+			"objects": {
+				"localStaticPicture": {
+					"type": "picture",
+					"top": 26,
+					"left": 107,
+					"width": 141,
+					"height": 31,
+					"picture": "Images/usage-externe.gif"
+				},
+				"globalStaticPicture": {
+					"type": "picture",
+					"top": 21,
+					"left": 24,
+					"width": 63,
+					"height": 40,
+					"picture": "/RESOURCES/Images/Avatar 32x32.jpg"
+				}
+			}
 		},
 		{
 			"objects": {
-				"formPicture": {
-					"type": "picture",
-					"top": 26,
-					"left": 24,
-					"width": 141,
-					"height": 31,
-					"picture": "Images/0-logo.gif"
-				},
-				"missingPicture": {
+				"missingStaticPicture": {
 					"type": "picture",
 					"top": 77,
 					"left": 24,
@@ -52,13 +61,13 @@
 					"height": 31,
 					"picture": "/RESOURCES/Images/missing.gif"
 				},
-				"Button": {
+				"regularButtonWithIcon": {
 					"type": "button",
 					"text": "Button",
 					"top": 128,
 					"left": 24,
 					"width": 141,
-					"height": 31,
+					"height": 22,
 					"events": [
 						"onClick"
 					],
@@ -66,28 +75,67 @@
 					"textPlacement": "right",
 					"iconFrames": 4
 				},
-				"Button1": {
+				"regularButtonMissingIcon": {
 					"type": "button",
 					"text": "Button",
-					"top": 181,
-					"left": 15,
-					"width": 150,
-					"height": 43,
+					"top": 170,
+					"left": 24,
+					"width": 141,
+					"height": 22,
 					"events": [
 						"onClick"
 					],
 					"style": "regular",
 					"icon": "/RESOURCES/Images/missing.gif"
+				},
+				"List Box": {
+					"type": "listbox",
+					"left": 185,
+					"top": 77,
+					"width": 331,
+					"height": 132,
+					"events": [
+						"onClick",
+						"onHeaderClick",
+						"onDataChange",
+						"onSelectionChange"
+					],
+					"headerHeight": "40px",
+					"columns": [
+						{
+							"header": {
+								"text": "Header1",
+								"name": "listBoxHeaderWithIcon",
+								"icon": "/RESOURCES/Images/m_circle.png"
+							},
+							"name": "Column1",
+							"footer": {
+								"name": "Footer1"
+							},
+							"width": 187
+						},
+						{
+							"header": {
+								"name": "Header2",
+								"text": "Header2"
+							},
+							"name": "Column2",
+							"footer": {
+								"name": "Footer2"
+							}
+						}
+					]
 				}
 			}
 		}
 	],
-	"geometryStamp": 23,
+	"geometryStamp": 62,
 	"editor": {
 		"activeView": "View 1",
 		"defaultView": "View 1",
 		"views": {
 			"View 1": {}
 		}
-	}
+	},
+	"method": "method.4dm"
 }

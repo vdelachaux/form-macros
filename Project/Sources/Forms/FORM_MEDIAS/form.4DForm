@@ -17,7 +17,6 @@
 		"onTimer",
 		"onSelectionChange"
 	],
-	"windowTitle": "window title",
 	"destination": "detailScreen",
 	"pages": [
 		{
@@ -29,7 +28,7 @@
 					"type": "listbox",
 					"left": 0,
 					"top": 0,
-					"width": 252,
+					"width": 289,
 					"height": 325,
 					"events": [
 						"onClick",
@@ -71,6 +70,22 @@
 						},
 						{
 							"header": {
+								"name": "Header2",
+								"text": "Page"
+							},
+							"name": "Column2",
+							"dataSource": "This:C1470.pageNumber",
+							"enterable": false,
+							"width": 40,
+							"dataSourceTypeHint": "number",
+							"footer": {
+								"name": "Footer2"
+							},
+							"textAlign": "center",
+							"resizable": false
+						},
+						{
+							"header": {
 								"name": "Header1",
 								"text": "Source"
 							},
@@ -93,15 +108,15 @@
 				},
 				"Input": {
 					"type": "input",
-					"left": 267,
+					"left": 309,
 					"top": 33,
-					"width": 298,
+					"width": 282,
 					"height": 289,
 					"dataSource": "Form:C1466.picture",
 					"dataSourceTypeHint": "picture",
 					"enterable": false,
 					"focusable": false,
-					"pictureFormat": "proportionalCenter",
+					"pictureFormat": "proportionalTopLeft",
 					"fill": "transparent",
 					"borderStyle": "none",
 					"sizingX": "grow",
@@ -110,59 +125,68 @@
 					"dropping": "none",
 					"contextMenu": "none"
 				},
-				"Input1": {
-					"type": "input",
-					"left": 267,
-					"top": 8,
-					"width": 298,
-					"height": 17,
-					"dataSource": "Form:C1466.current.path",
-					"enterable": false,
-					"fill": "transparent",
-					"borderStyle": "none",
-					"textAlign": "center",
-					"sizingX": "grow"
-				},
-				"Splitter": {
-					"type": "splitter",
-					"left": 254,
-					"top": 0,
-					"width": 1,
-					"height": 325,
-					"sizingY": "grow",
-					"sizingX": "move",
-					"borderStyle": "none"
-				},
 				"Button": {
 					"type": "button",
 					"text": "Button",
 					"top": 0,
-					"left": 289,
+					"left": 315,
 					"width": 276,
 					"height": 10,
 					"events": [
 						"onClick"
 					],
 					"display": false,
-					"sizingX": "move"
+					"sizingX": "move",
+					"class": "dev"
 				},
 				"Button1": {
 					"type": "button",
 					"text": "Button",
 					"top": 0,
 					"left": 0,
-					"width": 247,
+					"width": 289,
 					"height": 10,
 					"events": [
 						"onClick"
 					],
 					"display": false,
-					"sizingX": "fixed"
+					"sizingX": "fixed",
+					"class": "dev"
+				},
+				"view": {
+					"type": "button",
+					"text": "_PATH_",
+					"top": 9,
+					"left": 293,
+					"width": 293,
+					"height": 18,
+					"events": [
+						"onClick"
+					],
+					"icon": "/.PRODUCT_RESOURCES/Internal Components/runtime.4dbase/Resources/images/formEditor/view.png",
+					"textPlacement": "right",
+					"iconFrames": 4,
+					"style": "custom",
+					"visibility": "hidden",
+					"sizingX": "grow",
+					"method": "ObjectMethods/view.4dm",
+					"class": "tiny link",
+					"fontWeight": "bold"
+				},
+				"Splitter": {
+					"type": "splitter",
+					"left": 289,
+					"top": 0,
+					"width": 1,
+					"height": 325,
+					"sizingY": "grow",
+					"sizingX": "move",
+					"borderStyle": "none"
 				}
 			}
 		}
 	],
-	"geometryStamp": 93,
+	"geometryStamp": 193,
 	"method": "method.4dm",
 	"editor": {
 		"activeView": "View 1",
@@ -170,5 +194,7 @@
 		"views": {
 			"View 1": {}
 		}
-	}
+	},
+	"windowTitle": "Medias",
+	"memorizeGeometry": true
 }
