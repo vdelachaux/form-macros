@@ -19,6 +19,7 @@ $macro         Object        Macro declaration object (in the formMacros.json fi
 	
 	This:C1470.FORM:=Null:C1517
 	This:C1470.DATA:=Null:C1517
+	This:C1470.RESULT:=Null:C1517
 	
 	// Page number
 	// >=0 look in editor.form[page number]
@@ -87,7 +88,7 @@ $error.componentSignature     Text          Internal component signature
 	//=== === === === === === === === === === === === === === === === === === === === === === ===
 Function OpenWindow($name : Text) : Integer
 	
-	// TODO:Center to the current form window
+	// TODO: Center to the current form window
 	return Open form window:C675($name; Movable form dialog box:K39:8; Horizontally centered:K39:1; Vertically centered:K39:4; *)
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
@@ -120,18 +121,6 @@ Function get default : Object
 	
 	This:C1470.DefaultValues:=This:C1470.DefaultValues || This:C1470._defaultValues
 	return This:C1470.DefaultValues
-	
-	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
-Function get _defaultValues : Object
-	
-	var $file : 4D:C1709.File
-	$file:=This:C1470.appResources.file("DefaultJsonForm.json")
-	
-	If ($file.exists)
-		
-		return JSON Parse:C1218($file.getText())
-		
-	End if 
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get css() : Collection
@@ -344,19 +333,22 @@ $pathPtr           Pointer       The result posix path
 	return $success
 	
 	// Mark:-Widgets
+	// === === === === === === === === === === === === === === === === === === === === === === ===
 	/// Returns a collection of widget names
-Function GetFormObjectNames($pageNumber : Integer) : Collection
+/**
+Optional pageNumber
+>=0 look in editor.form[page number]
+-1 look in editor.currentPage
+-2 look in editor.currentPage for current page , and editor.form for other
+-3 look in editor.form DEFAULT
+**/
+Function GetObjectNames($pageNumber : Integer) : Collection
 	
 	var $indx : Integer
 	var $page : Object
 	var $c; $pages : Collection
 	
-	// Page number
-	// >=0 look in editor.form[page number]
-	// -1 look in editor.currentPage
-	// -2 look in editor.currentPage for current page , and editor.form for other.
-	// -3 look in editor.form
-	
+	$pageNumber:=Count parameters:C259<1 ? This:C1470.ALL_PAGES : $pageNumber
 	$pages:=This:C1470.editor.form.pages
 	$c:=[]
 	
@@ -365,7 +357,7 @@ Function GetFormObjectNames($pageNumber : Integer) : Collection
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 		: ($pageNumber=This:C1470.CURRENT_PAGE)
 			
-			$c:=$c.concat(This:C1470._getObjectNameInPage(This:C1470.editor.currentPage))
+			$c:=$c.concat(This:C1470.GetObjectNamesInPage(This:C1470.editor.currentPage))
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 		: ($pages=Null:C1517)
@@ -377,7 +369,7 @@ Function GetFormObjectNames($pageNumber : Integer) : Collection
 			
 			For each ($page; $pages)  //While ($0=Null)
 				
-				$c:=$c.concat(This:C1470._getObjectNameInPage($page))
+				$c:=$c.concat(This:C1470.GetObjectNamesInPage($page))
 				
 			End for each 
 			
@@ -394,7 +386,7 @@ Function GetFormObjectNames($pageNumber : Integer) : Collection
 				
 				If ($page#Null:C1517)
 					
-					$c:=$c.concat(This:C1470._getObjectNameInPage($page))
+					$c:=$c.concat(This:C1470.GetObjectNamesInPage($page))
 					
 				End if 
 				
@@ -403,11 +395,16 @@ Function GetFormObjectNames($pageNumber : Integer) : Collection
 			End for each 
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pageNumber<0)
+			
+			ASSERT:C1129(False:C215; "Unmanaged negative page number : "+String:C10($pageNumber))
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 		Else 
 			
 			If ($pageNumber<$pages.length)
 				
-				$c:=$c.concat(This:C1470._getObjectNameInPage($pages))
+				$c:=$c.concat(This:C1470.GetObjectNamesInPage($pages))
 				
 			End if 
 			
@@ -416,25 +413,92 @@ Function GetFormObjectNames($pageNumber : Integer) : Collection
 	
 	return $c
 	
-	/// Returns an widget object from this name
-Function GetFormObject($name : Text; $pageNumber : Integer) : Object
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+	/// Returns a collection of widget names in a given page
+/**
+Parameters           Type          Mandatory     Description
+---------            ---------     ---------     ---------
+page                 Object        Yes           Page object
+**/
+Function GetObjectNamesInPage($page : Object) : Collection
+	
+	var $name : Text
+	var $column; $o : Object
+	var $c : Collection
+	
+	If ($page=Null:C1517)\
+		 | ($page.objects=Null:C1517)
+		
+		ASSERT:C1129(Structure file:C489#Structure file:C489(*))  // Trace in dev mode
+		return   // Null
+		
+	End if 
+	
+	$c:=[]
+	
+	For each ($name; $page.objects)
+		
+		$o:=$page.objects[$name]
+		
+		$c.push($name)
+		
+		If ($o.type="listbox")
+			
+			// Not a good practice, but
+			// Sub object can have empty or not defined name.
+			// In this case, unique name will be generated when form will be loaded
+			
+			For each ($column; $o.columns)
+				
+				If ($column.name#"")
+					
+					$c.push($column.name)
+					
+				End if 
+				
+				If ($column.header#Null:C1517)\
+					 && ($column.header.name#"")
+					
+					$c.push($column.header.name)
+					
+				End if 
+				
+				If ($column.footer#Null:C1517)\
+					 && ($column.footer.name#"")
+					
+					$c.push($column.footer.name)
+					
+				End if 
+			End for each 
+		End if 
+	End for each 
+	
+	return $c
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+	/// Returns a widget object from this name
+/**
+Optional pageNumber
+>=0 look in editor.form[page number]  The returned object is readonly
+-1 look in editor.currentPage  The returned object is readonly
+-2 look in editor.currentPage for current page , and editor.form for other.returned object can be r/o or r/w
+-3 look in editor.form   The returned object is readonly DEFAULT
+**/
+Function GetObject($name : Text; $pageNumber : Integer; $typeCollector : Pointer) : Object
 	
 	var $indx : Integer
 	var $o; $page : Object
 	var $pages : Collection
 	
-	// Page number
-	// >=0 look in editor.form[page number]  The returned object is readonly
-	// -1 look in editor.currentPage  The returned object is readonly
-	// -2 look in editor.currentPage for current page , and editor.form for other.returned object can be r/o or r/w
-	// -3 look in editor.form   The returned object is readonly
+	This:C1470._setCollector($typeCollector; "")
 	
 	If (Length:C16($name)=0)
 		
-		return 
+		return   // Null
 		
 	End if 
 	
+	$pageNumber:=Count parameters:C259<2 ? This:C1470.ALL_PAGES : $pageNumber
 	$pages:=This:C1470.editor.form.pages
 	
 	Case of 
@@ -442,7 +506,7 @@ Function GetFormObject($name : Text; $pageNumber : Integer) : Object
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 		: ($pageNumber=This:C1470.CURRENT_PAGE)
 			
-			$o:=This:C1470._getObjectInPage(This:C1470.editor.currentPage; $name)
+			$o:=This:C1470.GetObjectInPage(This:C1470.editor.currentPage; $name; $typeCollector)
 			
 			If ($o#Null:C1517)
 				
@@ -468,7 +532,7 @@ Function GetFormObject($name : Text; $pageNumber : Integer) : Object
 				
 				If ($page#Null:C1517)
 					
-					$o:=This:C1470._getObjectInPage($page; $name)
+					$o:=This:C1470.GetObjectInPage($page; $name; $typeCollector)
 					
 				End if 
 				
@@ -489,7 +553,7 @@ Function GetFormObject($name : Text; $pageNumber : Integer) : Object
 			
 			For each ($page; $pages)
 				
-				$o:=This:C1470._getObjectInPage($page; $name)
+				$o:=This:C1470.GetObjectInPage($page; $name; $typeCollector)
 				
 				If ($o#Null:C1517)
 					
@@ -500,19 +564,20 @@ Function GetFormObject($name : Text; $pageNumber : Integer) : Object
 					
 					$indx+=1
 					
-					
-					
 				End if 
 			End for each 
+			
+			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+		: ($pageNumber<0)
+			
+			ASSERT:C1129(False:C215; "Unmanaged negative page number : "+String:C10($pageNumber))
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 		Else 
 			
 			If ($pageNumber<$pages.length)
 				
-				$o:=This:C1470._getObjectInPage($pages[$pageNumber]; $name)
-				
-				
+				$o:=This:C1470.GetObjectInPage($pages[$pageNumber]; $name; $typeCollector)
 				
 				If ($o#Null:C1517)
 					
@@ -528,7 +593,12 @@ Function GetFormObject($name : Text; $pageNumber : Integer) : Object
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 	/// Returns default values object of a widget from this type
-Function GetformObjectDefaultValues($type : Text) : Object
+/**
+Parameters           Type          Mandatory     Description
+---------            ---------     ---------     ---------
+type                 Text          No            Widget type. All default values if ommitted
+**/
+Function GetObjectDefault($type : Text) : Object
 	
 	This:C1470.DefaultValues:=This:C1470.DefaultValues || This:C1470._defaultValues
 	
@@ -541,14 +611,21 @@ Function GetformObjectDefaultValues($type : Text) : Object
 	return $type ? This:C1470.DefaultValues[$type] : This:C1470.DefaultValues
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-	/// Returns True if a widget exists under this name
-Function formObjectExist($name : Text; $in_useCurrentPage : Boolean; $pageCollator : Pointer) : Boolean
+	/// Returns True if the widget of this name exists
+/**
+Parameters           Type          Mandatory     Description
+---------            ---------     ---------     ---------
+name                 Text          Yes           Name of the widget to search
+inCurrentPage        Boolean       No            Limit to current page
+pageCollector        Pointer       No            Get the page number where the widget was found
+**/
+Function Exists($name : Text; $inCurrentPage : Boolean; $pageCollector : Pointer) : Boolean
 	
 	var $indx : Integer
 	var $object; $page : Object
 	
 	If ($name="")\
-		 | (This:C1470.editor.form.pagesNull)
+		 | (This:C1470.editor.form.pages=Null:C1517)
 		
 		return 
 		
@@ -556,30 +633,23 @@ Function formObjectExist($name : Text; $in_useCurrentPage : Boolean; $pageCollat
 	
 	For each ($page; This:C1470.editor.form.pages)
 		
-		If (($in_useCurrentPage=True:C214)\
+		If (($inCurrentPage=True:C214)\
 			 & ($indx=This:C1470.currentPageNumber))
 			
 			$page:=This:C1470.editor.currentPage
-			$indx:=-1
-			
-		Else 
+			$indx:=This:C1470.CURRENT_PAGE
 			
 		End if 
 		
 		If ($page#Null:C1517)
 			
-			$object:=This:C1470._getObjectInPage($page; $name)
+			$object:=This:C1470.GetObjectInPage($page; $name; $pageCollector)
 			
 		End if 
 		
 		If ($object#Null:C1517)
 			
-			If (Count parameters:C259=3) && (Not:C34(Is nil pointer:C315($pageCollator)))
-				
-				$pageCollator->:=$indx
-				
-			End if 
-			
+			This:C1470._setCollector($pageCollector; $indx)
 			return True:C214
 			
 		End if 
@@ -588,14 +658,16 @@ Function formObjectExist($name : Text; $in_useCurrentPage : Boolean; $pageCollat
 		
 	End for each 
 	
-	If (Count parameters:C259=3) && (Not:C34(Is nil pointer:C315($pageCollator)))
-		
-		$pageCollator->:=$indx
-		
-	End if 
+	This:C1470._setCollector($pageCollector; $indx)
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function isFormObjectSelected($name : Text) : Boolean
+	/// Returns True if the widget of this name is selected
+/**
+Parameters           Type          Mandatory     Description
+---------            ---------     ---------     ---------
+name                 Text          Yes           Name of the widget to test
+**/
+Function isSelected($name : Text) : Boolean
 	
 	If (Length:C16($name)=0)
 		
@@ -606,29 +678,30 @@ Function isFormObjectSelected($name : Text) : Boolean
 	return This:C1470.selection.indexOf($name)#-1
 	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
-Function _getObjectInPage($page : Object; $name : Text) : Object
+Function GetObjectInPage($page : Object; $name : Text; $typeCollector : Pointer) : Object
 	
 	var $key : Text
 	var $found : Boolean
-	var $column; $o : Object
-	
-	//$type->:=""
+	var $column; $o; $objects : Object
 	
 	If ($page=Null:C1517)\
 		 | ($page.objects=Null:C1517)\
 		 | (Length:C16($name)=0)
 		
-		return 
+		ASSERT:C1129(Structure file:C489#Structure file:C489(*))  // Trace in dev mode
+		return   // Null
 		
 	End if 
 	
-	For each ($key; $page.objects) While ($found=False:C215)
+	$objects:=$page.objects
+	
+	For each ($key; $objects)
 		
-		$o:=$page.objects[$key]
+		$o:=$objects[$key]
 		
 		If ($key=$name)
 			
-			//$type->:=$o.type
+			This:C1470._setCollector($typeCollector; $o.type)
 			return $o
 			
 		Else 
@@ -639,24 +712,21 @@ Function _getObjectInPage($page : Object; $name : Text) : Object
 					
 					If ($column.name=$name)
 						
-						//$type->:="columns"
-						$o.type:="columns"
+						This:C1470._setCollector($typeCollector; "columns")
 						return $column
 						
 					Else 
 						
 						If ($column.header.name=$name)
 							
-							//$type->:="header"
-							$o.type:="header"
+							This:C1470._setCollector($typeCollector; "header")
 							return $column.header
 							
 						Else 
 							
 							If ($column.footer.name=$name)
 								
-								//$type->:="footer"
-								$o.type:="footer"
+								This:C1470._setCollector($typeCollector; "footer")
 								return $column.footer
 								
 							End if 
@@ -702,7 +772,7 @@ Function _buildObjectGroups
 					$done:=False:C215
 					For each ($objName; $objects) Until ($done=True:C214)
 						If ($objName#"")
-							If (This:C1470.formObjectExist($objName; True:C214; ->$foundInPage))
+							If (This:C1470.Exists($objName; True:C214; ->$foundInPage))
 								If ($foundInPage=$pageNumber)
 									OB SET:C1220($pageGroup; $groupName; $objects.copy())
 								End if 
@@ -723,52 +793,6 @@ Function _buildObjectGroups
 	
 	$0:=$pageGroup
 	
-	
-Function _getObjectNameInPage
-	
-	var $0 : Collection
-	var $1 : Object
-	var $page : Object
-	
-	$page:=$1
-	
-	var $found : Boolean
-	var $objectName; $objectType : Text
-	var $object; $col : Object
-	
-	$0:=New collection:C1472
-	
-	If (($page#Null:C1517))
-		
-		If ($page.objects#Null:C1517)
-			For each ($objectName; $page.objects)
-				$object:=$page.objects[$objectName]
-				
-				$0.push($objectName)
-				
-				If (This:C1470.Strcmp($object.type; "listbox"))
-					// not a good practice, but
-					// sub object can have empty or not defined name. In this case , unique name will be generated when form will be loaded
-					
-					For each ($col; $object.columns)
-						If ($col.name#"")
-							$0.push($col.name)
-						End if 
-						If (OB Is defined:C1231($col; "header"))
-							If ($col.header.name#"")
-								$0.push($col.header.name)
-							End if 
-						End if 
-						If (OB Is defined:C1231($col; "footer"))
-							If ($col.footer.name#"")
-								$0.push($col.footer.name)
-							End if 
-						End if 
-					End for each 
-				End if 
-			End for each 
-		End if 
-	End if 
 	
 	
 	
@@ -798,7 +822,7 @@ Function MakeUniqueObjectName
 	
 	If ($in_wantedName#"")
 		
-		$names:=This:C1470.GetFormObjectNames(-2)
+		$names:=This:C1470.GetObjectNames(-2)
 		$groups:=This:C1470.groupNames
 		
 		If ($names.length>0)
@@ -944,8 +968,8 @@ Function RenameObject
 	
 	$0:=False:C215
 	
-	If (This:C1470.formObjectExist($in_OldName; True:C214))
-		If (Not:C34(This:C1470.formObjectExist($in_NewName; True:C214)))
+	If (This:C1470.Exists($in_OldName; True:C214))
+		If (Not:C34(This:C1470.Exists($in_NewName; True:C214)))
 			$objects:=This:C1470.editor.currentPage.objects
 			$newObjects:=New object:C1471
 			For each ($property; $objects)
@@ -1411,6 +1435,25 @@ Function _getPage($pageNumber : Integer) : Object
 			
 		End if 
 	End if 
+	
+	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+	//returs the default values object
+Function get _defaultValues : Object
+	
+	var $file : 4D:C1709.File
+	$file:=This:C1470.appResources.file("DefaultJsonForm.json")
+	return $file.exists ? JSON Parse:C1218($file.getText()) : {}
+	
+	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Function _setCollector($ptr : Pointer; $value)
+	
+	If (Is nil pointer:C315($ptr))
+		
+		return 
+		
+	End if 
+	
+	$ptr->:=$value
 	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 Function _meta($test; $target : Text) : Object

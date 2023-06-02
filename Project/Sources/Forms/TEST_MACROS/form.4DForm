@@ -125,11 +125,29 @@
 							}
 						}
 					]
+				},
+				"TEST": {
+					"type": "button",
+					"top": 33,
+					"left": 361,
+					"width": 16,
+					"height": 16,
+					"events": [
+						"onClick"
+					],
+					"textPlacement": "right",
+					"style": "custom",
+					"visibility": "hidden",
+					"class": "mini link",
+					"fontWeight": "bold",
+					"sizingY": "fixed",
+					"iconFrames": 4,
+					"icon": "/.PRODUCT_RESOURCES/Internal Components/development.4dbase/Resources/images/formEditor/view.png"
 				}
 			}
 		}
 	],
-	"geometryStamp": 62,
+	"geometryStamp": 69,
 	"editor": {
 		"activeView": "View 1",
 		"defaultView": "View 1",

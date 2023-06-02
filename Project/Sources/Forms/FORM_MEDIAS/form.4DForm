@@ -13,6 +13,7 @@
 	"bottomMargin": 0,
 	"events": [
 		"onLoad",
+		"onActivate",
 		"onDataChange",
 		"onTimer",
 		"onSelectionChange"
@@ -20,16 +21,55 @@
 	"destination": "detailScreen",
 	"pages": [
 		{
-			"objects": {}
+			"objects": {
+				"Button": {
+					"type": "button",
+					"text": "Button",
+					"top": 0,
+					"left": 506,
+					"width": 276,
+					"height": 10,
+					"events": [
+						"onClick"
+					],
+					"display": false,
+					"sizingX": "move",
+					"class": "dev"
+				},
+				"Button1": {
+					"type": "button",
+					"text": "Button",
+					"top": 0,
+					"left": 0,
+					"width": 450,
+					"height": 10,
+					"events": [
+						"onClick"
+					],
+					"display": false,
+					"sizingX": "fixed",
+					"class": "dev"
+				}
+			}
 		},
 		{
 			"objects": {
+				"Rectangle": {
+					"type": "rectangle",
+					"top": 0,
+					"left": 461,
+					"width": 320,
+					"height": 31,
+					"stroke": "transparent",
+					"fill": "automatic",
+					"sizingX": "grow"
+				},
 				"list": {
 					"type": "listbox",
 					"left": 0,
 					"top": 0,
-					"width": 289,
-					"height": 325,
+					"width": 460,
+					"height": 345,
 					"events": [
 						"onClick",
 						"onSelectionChange"
@@ -53,7 +93,7 @@
 					"columns": [
 						{
 							"header": {
-								"text": "Medias",
+								"text": "Object",
 								"name": "Entête1",
 								"verticalAlign": "middle",
 								"textAlign": "center"
@@ -62,7 +102,7 @@
 							"footer": {
 								"name": "Pied1"
 							},
-							"width": 150,
+							"width": 160,
 							"events": [],
 							"dataSource": "This:C1470.name",
 							"minWidth": 150,
@@ -77,12 +117,13 @@
 							"dataSource": "This:C1470.pageNumber",
 							"enterable": false,
 							"width": 40,
-							"dataSourceTypeHint": "number",
 							"footer": {
 								"name": "Footer2"
 							},
 							"textAlign": "center",
-							"resizable": false
+							"resizable": false,
+							"dataSourceTypeHint": "number",
+							"numberFormat": "###,##0;(###,##0)"
 						},
 						{
 							"header": {
@@ -95,20 +136,64 @@
 							},
 							"dataSource": "This:C1470.source",
 							"width": 100,
-							"choiceList": {
-								"$ref": "/SOURCES/lists.json#/source"
-							},
 							"events": [
 								"onDataChange"
 							],
 							"enterable": false,
+							"resizable": false,
+							"dataSourceTypeHint": "text",
+							"textAlign": "center"
+						},
+						{
+							"header": {
+								"name": "Header3",
+								"text": "Dark"
+							},
+							"name": "Column3",
+							"footer": {
+								"name": "Footer3"
+							},
+							"enterable": false,
+							"dataSource": "\"✅\"*Num:C11(This:C1470.dark.exists)",
+							"width": 50,
+							"textAlign": "center",
 							"resizable": false
+						},
+						{
+							"header": {
+								"name": "Header4",
+								"text": "HD"
+							},
+							"name": "Column4",
+							"footer": {
+								"name": "Footer4"
+							},
+							"width": 50,
+							"dataSource": "\"✅\"*Num:C11(This:C1470.HD.exists)",
+							"resizable": false,
+							"enterable": false,
+							"textAlign": "center"
+						},
+						{
+							"header": {
+								"name": "Header5",
+								"text": "HD Dark"
+							},
+							"name": "Column5",
+							"footer": {
+								"name": "Footer5"
+							},
+							"width": 60,
+							"resizable": false,
+							"enterable": false,
+							"dataSource": "\"✅\"*Num:C11(This:C1470.HDDark.exists)",
+							"textAlign": "center"
 						}
 					]
 				},
 				"Input": {
 					"type": "input",
-					"left": 309,
+					"left": 480,
 					"top": 33,
 					"width": 282,
 					"height": 289,
@@ -125,68 +210,88 @@
 					"dropping": "none",
 					"contextMenu": "none"
 				},
-				"Button": {
-					"type": "button",
-					"text": "Button",
-					"top": 0,
-					"left": 315,
-					"width": 276,
-					"height": 10,
-					"events": [
-						"onClick"
-					],
-					"display": false,
-					"sizingX": "move",
-					"class": "dev"
-				},
-				"Button1": {
-					"type": "button",
-					"text": "Button",
-					"top": 0,
-					"left": 0,
-					"width": 289,
-					"height": 10,
-					"events": [
-						"onClick"
-					],
-					"display": false,
-					"sizingX": "fixed",
-					"class": "dev"
-				},
 				"view": {
 					"type": "button",
-					"text": "_PATH_",
-					"top": 9,
-					"left": 293,
-					"width": 293,
-					"height": 18,
+					"top": 7,
+					"left": 464,
+					"width": 16,
+					"height": 16,
 					"events": [
 						"onClick"
 					],
-					"icon": "/.PRODUCT_RESOURCES/Internal Components/runtime.4dbase/Resources/images/formEditor/view.png",
 					"textPlacement": "right",
-					"iconFrames": 4,
 					"style": "custom",
 					"visibility": "hidden",
-					"sizingX": "grow",
 					"method": "ObjectMethods/view.4dm",
-					"class": "tiny link",
-					"fontWeight": "bold"
+					"class": "mini link",
+					"fontWeight": "bold",
+					"icon": "/.PRODUCT_RESOURCES/Internal Components/development.4dbase/Resources/images/formEditor/view.png",
+					"sizingY": "fixed",
+					"iconFrames": 4
 				},
 				"Splitter": {
 					"type": "splitter",
-					"left": 289,
+					"left": 460,
 					"top": 0,
 					"width": 1,
-					"height": 325,
+					"height": 345,
 					"sizingY": "grow",
 					"sizingX": "move",
 					"borderStyle": "none"
+				},
+				"delete": {
+					"type": "button",
+					"top": 7,
+					"left": 512,
+					"width": 16,
+					"height": 16,
+					"events": [
+						"onClick"
+					],
+					"visibility": "hidden",
+					"icon": "/.PRODUCT_RESOURCES/Internal Components/development.4dbase/Resources/images/formEditor/layers1/deleteView.png",
+					"iconFrames": 4,
+					"style": "custom",
+					"sizingY": "fixed",
+					"method": "ObjectMethods/delete.4dm"
+				},
+				"move": {
+					"type": "button",
+					"top": 7,
+					"left": 488,
+					"width": 16,
+					"height": 16,
+					"events": [
+						"onClick"
+					],
+					"visibility": "hidden",
+					"icon": "/.PRODUCT_RESOURCES/Internal Components/development.4dbase/Resources/images/formEditor/layers1/moveToView.png",
+					"iconFrames": 4,
+					"style": "custom",
+					"sizingY": "fixed"
+				},
+				"Line": {
+					"type": "line",
+					"top": 31,
+					"left": 460,
+					"width": 321,
+					"height": 0,
+					"sizingX": "grow"
+				},
+				"Input1": {
+					"type": "input",
+					"left": 533,
+					"top": 7,
+					"width": 229,
+					"height": 17,
+					"dataSource": "Form:C1466.current.path",
+					"class": "infos",
+					"sizingX": "grow"
 				}
 			}
 		}
 	],
-	"geometryStamp": 193,
+	"geometryStamp": 370,
 	"method": "method.4dm",
 	"editor": {
 		"activeView": "View 1",
