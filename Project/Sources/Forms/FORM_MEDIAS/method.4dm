@@ -66,10 +66,15 @@ Case of
 				End if 
 				
 				OBJECT SET ENABLED:C1123(*; "view"; True:C214)
+				OBJECT SET VISIBLE:C603(*; "alert"; False:C215)
+				OBJECT SET RGB COLORS:C628(*; "name"; -1)
+				
 				
 			Else 
 				
 				OBJECT SET ENABLED:C1123(*; "view"; False:C215)
+				OBJECT SET VISIBLE:C603(*; "alert"; True:C214)
+				OBJECT SET RGB COLORS:C628(*; "name"; "red")
 				
 			End if 
 			
@@ -84,6 +89,8 @@ Case of
 			OBJECT SET ENABLED:C1123(*; "view"; False:C215)
 			OBJECT SET ENABLED:C1123(*; "delete"; False:C215)
 			OBJECT SET ENABLED:C1123(*; "move"; False:C215)
+			
+			OBJECT SET VISIBLE:C603(*; "alert"; False:C215)
 			
 		End if 
 		

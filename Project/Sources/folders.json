@@ -17,7 +17,12 @@
 	},
 	"🧰 Tools": {
 		"classes": [
-			"_formMacroHelper"
+			"_formMacroDeclaration",
+			"_formMacroEditor",
+			"_formMacroError",
+			"_formMacroHelper",
+			"_formMacroResult",
+			"_formMacroResultEditor"
 		]
 	},
 	"trash": {}

@@ -116,8 +116,9 @@
 						},
 						{
 							"header": {
-								"name": "Header2",
-								"text": "Header2"
+								"name": "listboxHeaderFull",
+								"text": "Haeder 2",
+								"icon": "Images/Icon_455.png"
 							},
 							"name": "Column2",
 							"footer": {
@@ -126,7 +127,7 @@
 						}
 					]
 				},
-				"TEST": {
+				"TestButton": {
 					"type": "button",
 					"top": 33,
 					"left": 361,
@@ -143,11 +144,19 @@
 					"sizingY": "fixed",
 					"iconFrames": 4,
 					"icon": "/.PRODUCT_RESOURCES/Internal Components/development.4dbase/Resources/images/formEditor/view.png"
+				},
+				"localStatictPictureFull": {
+					"type": "picture",
+					"top": 31,
+					"left": 394,
+					"width": 16,
+					"height": 16,
+					"picture": "Images/Icon_455.png"
 				}
 			}
 		}
 	],
-	"geometryStamp": 69,
+	"geometryStamp": 81,
 	"editor": {
 		"activeView": "View 1",
 		"defaultView": "View 1",

@@ -194,7 +194,7 @@
 				"Input": {
 					"type": "input",
 					"left": 480,
-					"top": 33,
+					"top": 40,
 					"width": 282,
 					"height": 289,
 					"dataSource": "Form:C1466.picture",
@@ -278,20 +278,31 @@
 					"height": 0,
 					"sizingX": "grow"
 				},
-				"Input1": {
+				"name": {
 					"type": "input",
 					"left": 533,
 					"top": 7,
 					"width": 229,
 					"height": 17,
-					"dataSource": "Form:C1466.current.path",
+					"dataSource": "Form:C1466.current.fullName",
 					"class": "infos",
+					"sizingX": "grow"
+				},
+				"alert": {
+					"type": "text",
+					"text": "This object refers to a media that has not been found.",
+					"top": 44,
+					"left": 481,
+					"width": 267,
+					"height": 46,
+					"stroke": "#ff0000",
+					"visibility": "hidden",
 					"sizingX": "grow"
 				}
 			}
 		}
 	],
-	"geometryStamp": 370,
+	"geometryStamp": 403,
 	"method": "method.4dm",
 	"editor": {
 		"activeView": "View 1",

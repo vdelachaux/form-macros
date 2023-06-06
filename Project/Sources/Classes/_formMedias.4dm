@@ -1,11 +1,13 @@
+property RESULT : cs:C1710._formMacroResult
+
 Class extends _formMacroHelper
 
 Class constructor($macro : Object)
 	
 	Super:C1705($macro)
 	
-	This:C1470.FORM:="FORM_MEDIAS"
-	This:C1470.RESULT:={}
+	This:C1470.UI_FORM:="FORM_MEDIAS"
+	This:C1470.RESULT:=cs:C1710._formMacroResult.new()
 	
 	This:C1470.darkSuffix:="_dark"
 	This:C1470.hdSuffix:="@2x"
@@ -46,8 +48,13 @@ Function LoadMedias() : Collection
 			
 			$o.name:=$o.header#Null:C1517 ? $o.header.name : $name
 			
+			If ($c.query("name = :1"; $o.name).length>0)
+				
+				continue
+				
+			End if 
+			
 			Case of 
-					
 					//______________________________________________________
 				: ($o.path="/RESOURCES/@")
 					
@@ -81,9 +88,11 @@ Function LoadMedias() : Collection
 					//______________________________________________________
 			End case 
 			
+			$o.fullName:=Split string:C1554($o.path; "/").last()
+			
 			$o.dark:=This:C1470.DarkMedia($o.media)
 			$o.HD:=This:C1470.HDMedia($o.media)
-			$o.HDDark:=This:C1470.HDMedia($o.HD)
+			$o.HDDark:=This:C1470.DarkMedia($o.HD)
 			
 			$c.push($o)
 			
@@ -94,7 +103,10 @@ Function LoadMedias() : Collection
 	var $file : 4D:C1709.File
 	For each ($file; This:C1470.folder.folder("Images").files(fk ignore invisible:K87:22))
 		
-		If ($c.indexOf($file)=-1)
+		If ($c.query("media.path = :1"; $file.path).pop()=Null:C1517)\
+			 & ($c.query("dark.path = :1"; $file.path).pop()=Null:C1517)\
+			 & ($c.query("HD.path = :1"; $file.path).pop()=Null:C1517)\
+			 & ($c.query("HDDark.path = :1"; $file.path).pop()=Null:C1517)
 			
 			$o:={\
 				name: "⚠️ "+$file.name; \
@@ -104,9 +116,11 @@ Function LoadMedias() : Collection
 				path: "Images/"+$file.fullName\
 				}
 			
+			$o.fullName:=Split string:C1554($file.path; "/").last()
+			
 			$o.dark:=This:C1470.DarkMedia($o.media)
 			$o.HD:=This:C1470.HDMedia($o.media)
-			$o.HDDark:=This:C1470.HDMedia($o.HD)
+			$o.HDDark:=This:C1470.DarkMedia($o.HD)
 			
 			$c.push($o)
 			
@@ -118,10 +132,26 @@ Function LoadMedias() : Collection
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function DarkMedia($media : 4D:C1709.File) : 4D:C1709.File
 	
-	return $media.parent.file($media.name+This:C1470.darkSuffix+$media.extension)
+	If ($media=Null:C1517)
+		
+		return 
+		
+	End if 
+	
+	var $file : 4D:C1709.File
+	$file:=$media.parent.file($media.name+This:C1470.darkSuffix+$media.extension)
+	return $file.exists ? $file : Null:C1517
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function HDMedia($media : 4D:C1709.File) : 4D:C1709.File
 	
-	return $media.parent.file($media.name+This:C1470.hdSuffix+$media.extension)
+	If ($media=Null:C1517)
+		
+		return 
+		
+	End if 
+	
+	var $file : 4D:C1709.File
+	$file:=$media.parent.file($media.name+This:C1470.hdSuffix+$media.extension)
+	return $file.exists ? $file : Null:C1517
 	

@@ -1,13 +1,12 @@
-property editor; form; macro : Object
+// https://developer.4d.com/docs/FormEditor/macros
+property macro : cs:C1710._formMacroDeclaration  // Macro declaration object (in the formMacros.json file)
+property form : Object  // Form Editor Macro Proxy object containing the form properties
+property editor : cs:C1710._formMacroEditor  // A copy of all the elements of the form with their current values
+property UI_FORM : Text  // Form name to display
+property UI_DATA : Object  // Form data
+property RESULT : cs:C1710._formMacroResult  // Form Editor Macro Proxy object returning properties modified by the macro
 
 Class constructor($macro : Object)
-/*
-	
-Parameters     Type          Description
----------      ---------     ----------
-$macro         Object        Macro declaration object (in the formMacros.json file)
-	
-*/
 	
 	This:C1470.macro:=$macro
 	
@@ -17,33 +16,20 @@ $macro         Object        Macro declaration object (in the formMacros.json fi
 		 ? Folder:C1567(Application file:C491; fk platform path:K87:2).folder("Contents/Resources")\
 		 : File:C1566(Application file:C491; fk platform path:K87:2).parent.folder("Resources")
 	
-	This:C1470.FORM:=Null:C1517
-	This:C1470.DATA:=Null:C1517
-	This:C1470.RESULT:=Null:C1517
-	
-	// Page number
+	// Page number for search
 	// >=0 look in editor.form[page number]
-	This:C1470.CURRENT_PAGE:=-1  // -1 look in editor.currentPage
-	This:C1470.CURRENT_PAGE_MORE:=-2  // -2 look in editor.currentPage for current page , and editor.form for other
-	This:C1470.ALL_PAGES:=-3  // -3 look in editor.form
+	This:C1470.K_PAGE_CURRENT:=-1  // -1 look in editor.currentPage
+	This:C1470.K_PAGE_MORE:=-2  // -2 look in editor.currentPage for current page , and editor.form for other
+	This:C1470.K_PAGE_ALL:=-3  // -3 look in editor.form
+	
+	//Method type
+	This:C1470.K_METHOD_NO:=0  // No method
+	This:C1470.K_METHOD_FILE:=1  // Method name match object name, file is the ObjectMethods folder
+	This:C1470.K_METHOD_PROJECT:=2  // Project method
+	This:C1470.K_METHOD_CUSTOM:=3  // Custom
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function onInvoke($editor : Object)
-/*
-	
-Property                           Type          Description
----------                          ---------     ---------
-$editor.editor.form                Object        The entire form - All modification in this object are ignored.
-$editor.editor.file                File          The .4dform File object
-$editor.editor.name                Text          The form name
-$editor.editor.table               number        Table number of the form, 0 for project form
-$editor.editor.currentPageNumber   number        The number of the current page
-$editor.editor.currentPage         Object        The current page, containing all the form widgets and the entry order of the page
-$editor.editor.currentSelection    Collection    Collection of names of selected objects
-$editor.editor.formProperties      Object        The properties of the current form
-$editor.editor.target              Text          Name of the object under the mouse when clicked on a macro
-	
-*/
 	
 	This:C1470.form:=$editor
 	This:C1470.editor:=$editor.editor
@@ -56,32 +42,20 @@ $editor.editor.target              Text          Name of the object under the mo
 	End for each 
 	
 	// MARK:Display UI
-	If (This:C1470.FORM#Null:C1517)
+	If (This:C1470.UI_FORM#Null:C1517)
 		
-		This:C1470.DATA:=New object:C1471(\
+		This:C1470.UI_DATA:=New object:C1471(\
 			"result"; False:C215; \
 			"helper"; This:C1470; \
-			"winRef"; This:C1470.OpenWindow(This:C1470.FORM; Movable form dialog box:K39:8))
+			"winRef"; This:C1470.OpenWindow(This:C1470.UI_FORM; Movable form dialog box:K39:8))
 		
-		DIALOG:C40(This:C1470.FORM; This:C1470.DATA)
-		CLOSE WINDOW:C154(This:C1470.DATA.winRef)
+		DIALOG:C40(This:C1470.UI_FORM; This:C1470.UI_DATA)
+		CLOSE WINDOW:C154(This:C1470.UI_DATA.winRef)
 		
 	End if 
 	
 	//=== === === === === === === === === === === === === === === === === === === === === === ===
-Function onError($editor : Object; $result : Object; $errors : Collection)
-/* 
-	
-Property                      Type          Description
----------                     ---------     ---------
-$editor                       Object        Object send to onInvoke
-$resultMacro                  Object        Object returned by onInvoke
-$error                        Collection    Error stack
-$error.errCode                Number        Error code
-$error.message                Text          Description of the error
-$error.componentSignature     Text          Internal component signature
-	
-*/
+Function onError($editor : cs:C1710._formMacroEditor; $result : cs:C1710._formMacroResult; $errors : Collection)
 	
 	ALERT:C41($errors.extract("message").join("\n"))
 	
@@ -228,81 +202,78 @@ Function DeselectAll()
 	
 	This:C1470.selection:=[]
 	
-	// Mark:-Tools
+	// Mark:-Path management
 	// === === === === === === === === === === === === === === === === === === === === === === ===
+	/// Returns True if path posix belongs to package
 Function isInsidePackage($path : Text) : Boolean
 	
-	return This:C1470._isSubOf($path; "/PACKAGE/")
+	return This:C1470.isSubPathOf($path; "/PACKAGE/")
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function ValidatePath($path : Text; $formPath : Text) : Text
+	/// Returns True if path posix belongs to the resources folder
+Function isInsideResources($path : Text) : Boolean
 	
-	var $resultPath; $packagePath : Text
+	return This:C1470.isSubPathOf($path; "/RESOURCES/")
 	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+	/// Returns a posix path according to the file location
 /*
-Returns a posix path according to the file location
-	
 Parameters         Type          Description
 ---------          ---------     ---------
-$path              Text          Posix path to test
-$formPath          Text          The .4dform posix full path
-	
+path               Text          Posix path to test
+formPath           Text          The .4dform posix full path
 */
+Function ValidatePath($path : Text; $formPath : Text) : Text
 	
-	If (This:C1470._isSubOf($path; $formPath; ->$resultPath))\
-		 | (This:C1470._isSubOf($path; "/LOGS/"; ->$resultPath))
+	var $posixPath; $packagePath : Text
+	
+	If (This:C1470.isSubPathOf($path; $formPath; ->$posixPath))\
+		 | (This:C1470.isSubPathOf($path; "/LOGS/"; ->$posixPath))
 		
 		// Relative to form or Logs folder of the database
-		return $resultPath
+		return $posixPath
 		
 	Else 
 		
-		If (This:C1470._isSubOf($path; "/PACKAGE/"; ->$resultPath))
+		If (This:C1470.isSubPathOf($path; "/PACKAGE/"; ->$posixPath))
 			
-			$packagePath:=$resultPath
-			$resultPath:=""
+			$packagePath:=$posixPath
+			$posixPath:=""
 			
 			Case of 
 					
 					//======================================
-				: (This:C1470._isSubOf($path; "/RESOURCES/"; ->$resultPath))
+				: (This:C1470.isSubPathOf($path; "/RESOURCES/"; ->$posixPath))
 					
 					//======================================
-				: (This:C1470._isSubOf($path; "/SOURCES/"; ->$resultPath))
+				: (This:C1470.isSubPathOf($path; "/SOURCES/"; ->$posixPath))
 					
 					//======================================
-				: (This:C1470._isSubOf($path; "/PROJECT/"; ->$resultPath))
+				: (This:C1470.isSubPathOf($path; "/PROJECT/"; ->$posixPath))
 					
 					//======================================
 			End case 
 			
-			return $resultPath="" ? $packagePath : $resultPath
+			return $posixPath="" ? $packagePath : $posixPath
 			
 		End if 
 	End if 
 	
-	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
-Function _isSubOf($path : Text; $parentPath : Text; $pathPtr : Pointer) : Boolean
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+	/// Returns True if the posix path is in the given parent path
+/*
+Parameters         Type          Description
+---------          ---------     ---------
+path               Text          Posix path to test
+parentPath         Text          The posix path whose path must be a child
+pathPtr            Pointer       The result posix path
+*/
+Function isSubPathOf($path : Text; $parentPath : Text; $pathCollector : Pointer) : Boolean
 	
 	var $destFolder : Text
 	var $success : Boolean
 	
-/*
-Returns True if the posix path is in the given parent path
-	
-Parameters         Type          Description
----------          ---------     ---------
-$path              Text          Posix path to test
-$parentPath        Text          The posix path whose path must be a child
-$pathPtr           Pointer       The result posix path
-	
-*/
-	
-	If (Count parameters:C259=3)
-		
-		$pathPtr->:=""
-		
-	End if 
+	This:C1470._setCollector($pathCollector; "")
 	
 	If ($parentPath="/PACKAGE/")\
 		 || ($parentPath="/RESOURCES/")\
@@ -322,10 +293,9 @@ $pathPtr           Pointer       The result posix path
 		
 		$success:=(Substring:C12($path; 1; Length:C16($destFolder))=$destFolder)
 		
-		If (($success=True:C214)\
-			 & (Not:C34(Is nil pointer:C315($pathPtr))))
+		If ($success)
 			
-			$pathPtr->:=$parentPath+Substring:C12($path; Length:C16($destFolder)+1; Length:C16($path)-Length:C16($destFolder))
+			This:C1470._setCollector($pathCollector; $parentPath+Substring:C12($path; Length:C16($destFolder)+1; Length:C16($path)-Length:C16($destFolder)))
 			
 		End if 
 	End if 
@@ -348,14 +318,14 @@ Function GetObjectNames($pageNumber : Integer) : Collection
 	var $page : Object
 	var $c; $pages : Collection
 	
-	$pageNumber:=Count parameters:C259<1 ? This:C1470.ALL_PAGES : $pageNumber
+	$pageNumber:=Count parameters:C259<1 ? This:C1470.K_PAGE_ALL : $pageNumber
 	$pages:=This:C1470.editor.form.pages
 	$c:=[]
 	
 	Case of 
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-		: ($pageNumber=This:C1470.CURRENT_PAGE)
+		: ($pageNumber=This:C1470.K_PAGE_CURRENT)
 			
 			$c:=$c.concat(This:C1470.GetObjectNamesInPage(This:C1470.editor.currentPage))
 			
@@ -365,7 +335,7 @@ Function GetObjectNames($pageNumber : Integer) : Collection
 			// <NOTHING MORE TO DO>
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-		: ($pageNumber=This:C1470.ALL_PAGES)
+		: ($pageNumber=This:C1470.K_PAGE_ALL)
 			
 			For each ($page; $pages)  //While ($0=Null)
 				
@@ -374,7 +344,7 @@ Function GetObjectNames($pageNumber : Integer) : Collection
 			End for each 
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-		: ($pageNumber=This:C1470.CURRENT_PAGE_MORE)
+		: ($pageNumber=This:C1470.K_PAGE_MORE)
 			
 			For each ($page; $pages)
 				
@@ -498,13 +468,13 @@ Function GetObject($name : Text; $pageNumber : Integer; $typeCollector : Pointer
 		
 	End if 
 	
-	$pageNumber:=Count parameters:C259<2 ? This:C1470.ALL_PAGES : $pageNumber
+	$pageNumber:=Count parameters:C259<2 ? This:C1470.K_PAGE_ALL : $pageNumber
 	$pages:=This:C1470.editor.form.pages
 	
 	Case of 
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-		: ($pageNumber=This:C1470.CURRENT_PAGE)
+		: ($pageNumber=This:C1470.K_PAGE_CURRENT)
 			
 			$o:=This:C1470.GetObjectInPage(This:C1470.editor.currentPage; $name; $typeCollector)
 			
@@ -520,7 +490,7 @@ Function GetObject($name : Text; $pageNumber : Integer; $typeCollector : Pointer
 			// <NOTHING MORE TO DO>
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-		: ($pageNumber=This:C1470.CURRENT_PAGE_MORE)
+		: ($pageNumber=This:C1470.K_PAGE_MORE)
 			
 			For each ($page; $pages)
 				
@@ -549,7 +519,7 @@ Function GetObject($name : Text; $pageNumber : Integer; $typeCollector : Pointer
 			End for each 
 			
 			//––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-		: ($pageNumber=This:C1470.ALL_PAGES)
+		: ($pageNumber=This:C1470.K_PAGE_ALL)
 			
 			For each ($page; $pages)
 				
@@ -637,7 +607,7 @@ Function Exists($name : Text; $inCurrentPage : Boolean; $pageCollector : Pointer
 			 & ($indx=This:C1470.currentPageNumber))
 			
 			$page:=This:C1470.editor.currentPage
-			$indx:=This:C1470.CURRENT_PAGE
+			$indx:=This:C1470.K_PAGE_CURRENT
 			
 		End if 
 		
@@ -677,7 +647,8 @@ Function isSelected($name : Text) : Boolean
 	
 	return This:C1470.selection.indexOf($name)#-1
 	
-	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+	/// Returns a widget object in a page from this name
 Function GetObjectInPage($page : Object; $name : Text; $typeCollector : Pointer) : Object
 	
 	var $key : Text
@@ -737,396 +708,139 @@ Function GetObjectInPage($page : Object; $name : Text; $typeCollector : Pointer)
 		End if 
 	End for each 
 	
-Function _buildObjectGroups
-	var $0 : Object
-	var $1 : Integer
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function GetObjectX($widget : Object) : Integer
 	
-	var $pageNumber : Integer
+	return $widget.left
 	
-	$pageNumber:=$1
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function SetObjectX($widget : Object; $x : Integer)
 	
-	var $pageGroup; $page; $allGroups : Object
-	var $objects : Collection
-	var $groupName; $objName; $objectType : Text
-	var $done : Boolean
-	var $foundInPage : Integer
+	ASSERT:C1129(($widget.right#Null:C1517) | ($widget.width#Null:C1517))
 	
-	$done:=False:C215
-	$allGroups:=Null:C1517
-	$pageGroup:=Null:C1517
-	$page:=This:C1470._getPage($pageNumber)
-	
-	If ($page#Null:C1517)
+	If ($widget.right#Null:C1517)
 		
-		If (This:C1470.editor.form.editor#Null:C1517)
-			$allGroups:=This:C1470.editor.form.editor.groups
-		End if 
-		
-		If ($allGroups#Null:C1517)
-			
-			$pageGroup:=New object:C1471
-			
-			For each ($groupName; $allGroups)
-				$objects:=$allGroups[$groupName]
-				If ($objects.length>0)
-					$done:=False:C215
-					For each ($objName; $objects) Until ($done=True:C214)
-						If ($objName#"")
-							If (This:C1470.Exists($objName; True:C214; ->$foundInPage))
-								If ($foundInPage=$pageNumber)
-									OB SET:C1220($pageGroup; $groupName; $objects.copy())
-								End if 
-								$done:=True:C214
-							End if 
-						End if 
-					End for each 
-				End if 
-			End for each 
-		End if 
-	End if 
-	
-	If ($pageGroup#Null:C1517)
-		If (OB Is empty:C1297($pageGroup))
-			CLEAR VARIABLE:C89($pageGroup)
-		End if 
-	End if 
-	
-	$0:=$pageGroup
-	
-	
-	
-	
-Function MakeUniqueObjectName
-	var $0; $1 : Text
-	var $2 : Collection
-	var $3 : Boolean
-	
-	var $in_wantedName : Text
-	var $in_exclusions : Collection
-	var $in_withFreeMethodFile : Boolean
-	
-	$in_wantedName:=$1
-	$in_exclusions:=$2
-	$in_withFreeMethodFile:=$3
-	$0:=""
-	
-	var $tmpName; $name; $tmpScriptName; $methodfolderpath : Text
-	var $names; $groups : Collection
-	var $found : Boolean
-	var $counter : Integer
-	
-	// important
-	// this code don't use strict string compare (This.Strcmp) 
-	// because 4D object name is not case sensitive 
-	
-	
-	If ($in_wantedName#"")
-		
-		$names:=This:C1470.GetObjectNames(-2)
-		$groups:=This:C1470.groupNames
-		
-		If ($names.length>0)
-			
-			$counter:=0
-			$tmpName:=$in_wantedName
-			
-			If ($in_withFreeMethodFile)
-				$methodfolderpath:=This:C1470.objectMethodFolder.platformPath
-			End if 
-			
-			Repeat 
-				$found:=False:C215
-				
-				For each ($name; $names) While ($found=False:C215)
-					$found:=($tmpName=$name)
-				End for each 
-				
-				// groups
-				If (($groups.length>0) & ($found=False:C215))
-					For each ($name; $groups) While ($found=False:C215)
-						$found:=($tmpName=$name)
-					End for each 
-				End if 
-				
-				// look in exclusion list
-				If (($in_exclusions#Null:C1517) & ($found=False:C215))
-					For each ($name; $in_exclusions) While ($found=False:C215)
-						$found:=($tmpName=$name)
-					End for each 
-				End if 
-				
-				// test method file name
-				If (($in_withFreeMethodFile) & ($found=False:C215))
-					$tmpScriptName:=This:C1470.EncodeReservedFileCharacters($tmpName)
-					$found:=(Test path name:C476($methodfolderpath+$tmpScriptName+".4dm")=Is a document:K24:1)
-				End if 
-				
-				If ($found)
-					$counter:=$counter+1
-					$tmpName:=$in_wantedName+String:C10($counter)
-				Else 
-					$0:=$tmpName
-				End if 
-				
-			Until ($0#"")
-			
-		Else 
-			$0:=$in_wantedName
-		End if 
+		$widget.right:=$x+($widget.right-$widget.left)
+		$widget.left:=$x
 		
 	End if 
 	
-Function InsertFormObjectAfter
-	var $2 : Object
-	var $1; $3 : Text
-	var $0 : Boolean
-	
-	var $in_newObjectName; $in_afterObjectName : Text
-	var $in_newObject : Object
-	
-	$in_newObjectName:=$1
-	$in_afterObjectName:=$3
-	$in_newObject:=$2
-	
-	var $objects; $newObjects : Object
-	var $property : Text
-	
-	$0:=False:C215
-	$objects:=This:C1470.editor.currentPage.objects
-	
-	If ($in_newObjectName#"")
-		If (Not:C34(OB Is defined:C1231($objects; $in_newObjectName)))
-			If ($in_afterObjectName="")
-				$objects[$in_newObjectName]:=$in_newObject
-				$0:=True:C214
-			Else 
-				$newObjects:=New object:C1471
-				For each ($property; $objects)
-					$newObjects[$property]:=$objects[$property]
-					If (This:C1470.Strcmp($property; $in_afterObjectName))
-						$newObjects[$in_newObjectName]:=$in_newObject
-					End if 
-				End for each 
-				This:C1470.editor.currentPage.objects:=$newObjects
-				$0:=True:C214
-			End if 
-		End if 
+	If ($widget.width#Null:C1517)
+		
+		$widget.left:=$x
+		
 	End if 
 	
-Function InsertFormObjectBefore
-	var $2 : Object
-	var $1; $3 : Text
-	var $0 : Boolean
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function GetObjectY($widget : Object) : Integer
 	
-	var $in_newObjectName; $in_beforeObjectName : Text
-	var $in_newObject : Object
+	return $widget.top
 	
-	$in_newObjectName:=$1
-	$in_beforeObjectName:=$3
-	$in_newObject:=$2
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function SetObjectY($widget : Object; $y : Integer)
 	
-	var $objects; $newObjects : Object
-	var $newObjectName; $property : Text
+	ASSERT:C1129(($widget.bottom#Null:C1517) | ($widget.height#Null:C1517))
 	
-	$0:=False:C215
-	$objects:=This:C1470.editor.currentPage.objects
-	
-	If ($newObjectName#"")
-		If (Not:C34(OB Is defined:C1231($objects; $in_beforeObjectName)))
-			
-			$newObjects:=New object:C1471
-			
-			If ($in_beforeObjectName="")
-				$newObjects[$in_newObjectName]:=$in_newObject
-			End if 
-			
-			For each ($property; $objects)
-				If ($in_beforeObjectName#"")
-					If (This:C1470.Strcmp($property; $in_beforeObjectName))
-						$newObjects[$in_newObjectName]:=$in_newObject
-					End if 
-				End if 
-				$newObjects[$property]:=$objects[$property]
-			End for each 
-			This:C1470.editor.currentPage.objects:=$newObjects
-			$0:=True:C214
-		End if 
+	If ($widget.bottom#Null:C1517)
+		
+		$widget.bottom:=$y+($widget.bottom-$widget.top)
+		$widget.top:=$y
+		
 	End if 
 	
-Function RenameObject
-	var $1; $2 : Text
-	var $0 : Boolean
-	
-	var $in_OldName; $in_NewName : Text
-	
-	$in_OldName:=$1
-	$in_NewName:=$2
-	
-	var $objects; $newObjects : Object
-	var $property : Text
-	var $indx : Integer
-	
-	$0:=False:C215
-	
-	If (This:C1470.Exists($in_OldName; True:C214))
-		If (Not:C34(This:C1470.Exists($in_NewName; True:C214)))
-			$objects:=This:C1470.editor.currentPage.objects
-			$newObjects:=New object:C1471
-			For each ($property; $objects)
-				//If (This.Strcmp($property;$in_OldName))
-				If ($property=$in_OldName)
-					$newObjects[$in_NewName]:=$objects[$property]
-				Else 
-					$newObjects[$property]:=$objects[$property]
-				End if 
-			End for each 
-			
-			This:C1470.editor.currentPage.objects:=$newObjects
-			
-			If (This:C1470.isSelected($in_OldName))
-				This:C1470.Deselect($in_OldName)
-				This:C1470.Select($in_NewName)
-			End if 
-			
-			$indx:=This:C1470.FindInEntryOrder($in_OldName)
-			If ($indx#-1)
-				This:C1470.entryOrder[$indx]:=$in_NewName
-			End if 
-			$0:=True:C214
-			
-		End if 
+	If ($widget.height#Null:C1517)
+		
+		$widget.top:=$y
+		
 	End if 
 	
-Function ObjectGetX
-	var $1 : Object
-	var $0 : Integer
-	$0:=$1.left
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function GetObjectRight($widget : Object) : Integer
 	
-Function ObjectGetY
-	var $1 : Object
-	var $0 : Integer
-	$0:=$1.top
+	return $widget.left+This:C1470.ObjectGetWidth($widget)
 	
-Function ObjectGetRight
-	var $1 : Object
-	var $0 : Integer
-	$0:=$1.left+This:C1470.ObjectGetWidth($1)
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function GetObjectBottom($widget : Object) : Integer
 	
-Function ObjectGetBottom
-	var $1 : Object
-	var $0 : Integer
-	$0:=$1.top+This:C1470.ObjectGetHeight($1)
+	return $widget.top+This:C1470.GetObjectHeight($widget)
 	
-Function ObjectGetWidth
-	var $1 : Object
-	var $0 : Integer
-	If (OB Is defined:C1231($1; "right"))
-		$0:=$1.right-$1.left
-	Else 
-		$0:=$1.width
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function GetObjectWidth($widget : Object) : Integer
+	
+	return $widget.right ? $widget.right-$widget.left : $widget.width
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function SetObjectWidth($widget : Object; $width : Integer)
+	
+	If ($widget.right#Null:C1517)\
+		 || ($widget.width=Null:C1517)
+		
+		$widget.right:=$widget.left+$width
+		
 	End if 
 	
-Function ObjectSetWidth
-	var $1 : Object
-	var $2 : Integer
-	var $w; $r : Boolean
-	
-	$r:=OB Is defined:C1231($1; "right")
-	$w:=OB Is defined:C1231($1; "width")
-	If (($r=True:C214) | (($r=False:C215) & ($w=False:C215)))
-		$1.right:=$1.left+$2
-	End if 
-	If ($w)
-		$1.width:=$2
+	If ($widget.width#Null:C1517)
+		
+		$widget.width:=$width
+		
 	End if 
 	
-Function ObjectGetHeight
-	var $1 : Object
-	var $0 : Integer
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function GetObjectHeight($widget : Object) : Integer
 	
-	If (OB Is defined:C1231($1; "bottom"))
-		$0:=$1.bottom-$1.top
-	Else 
-		$0:=$1.height
+	return $widget.bottom ? $widget.right-$widget.top : $widget.height
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function SetObjectHeight($widget : Object; $height : Integer)
+	
+	If ($widget.bottom#Null:C1517)\
+		 || ($widget.height=Null:C1517)
+		
+		$widget.bottom:=$widget.top+$height
+		
 	End if 
 	
-Function ObjectSetHeight
-	var $1 : Object
-	var $2 : Integer
-	var $b; $h : Boolean
-	
-	$b:=OB Is defined:C1231($1; "bottom")
-	$h:=OB Is defined:C1231($1; "height")
-	If (($b=True:C214) | (($b=False:C215) & ($h=False:C215)))
-		$1.bottom:=$1.top+$2
-	End if 
-	If ($h)
-		$1.height:=$2
+	If ($widget.height#Null:C1517)
+		
+		$widget.height:=$height
+		
 	End if 
 	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function SetObjectPosition($widget : Object; $x : Integer; $y : Integer)
 	
-Function ObjectSetX
-	var $1 : Object
-	var $2 : Integer
-	var $r; $w : Boolean
+	This:C1470.SetObjectX($widget; $x)
+	This:C1470.SetObjectY($widget; $y)
 	
-	$r:=OB Is defined:C1231($1; "right")
-	$w:=OB Is defined:C1231($1; "width")
-	If ($w | $r)
-		If ($r)
-			$1.right:=$2+($1.right-$1.left)
-			$1.left:=$2
-		End if 
-		If ($w)
-			$1.left:=$2
-		End if 
-	Else 
-		ASSERT:C1129(False:C215)
-	End if 
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+	/// Returns object method status
+/**
+Parameters           Type          Mandatory     Description
+---------            ---------     ---------     ---------
+widget               Object        Yes           The widegt object
+name                 Text          Yes           Widget name
 	
-Function ObjectSetY
-	var $1 : Object
-	var $2 : Integer
-	var $b; $h : Boolean
-	
-	$b:=OB Is defined:C1231($1; "bottom")
-	$h:=OB Is defined:C1231($1; "height")
-	If ($b | $h)
-		If ($b)
-			$1.bottom:=$2+($1.bottom-$1.top)
-			$1.top:=$2
-		End if 
-		If ($h)
-			$1.top:=$2
-		End if 
-	Else 
-		ASSERT:C1129(False:C215)
-	End if 
-	
-Function ObjectSetPos
-	var $1 : Object
-	var $2; $3 : Integer
-	
-	This:C1470.ObjectSetX($1; $2)
-	This:C1470.ObjectSetY($1; $3)
-	
-Function GetWidgetMethodInfo($widget : Object; $name : Text) : Integer
-	
-	// $1 object
-	// $2 object name
-	
-	// 0 none
-	// 1 std method : methode name match object name, object method file is the ObjectMethods folder
-	// 2 project method
-	// 3 custom
+Status code
+--------- 
+0 = No method
+1 = Method name match object name, file is the ObjectMethods folder
+2 = Project method
+3 = Custom
+**/
+Function GetObjectMethodInfo($widget : Object; $name : Text) : Integer
 	
 	var $method; $pathname : Text
 	
-	
-	If ($widget=Null:C1517)\
-		 || ($widget.method=Null:C1517)
+	If ($widget=Null:C1517)
 		
-		return   // 0 none
+		ASSERT:C1129(Structure file:C489#Structure file:C489(*))  // Trace in dev mode
+		return 
+		
+	End if 
+	
+	If ($widget.method=Null:C1517)
+		
+		return This:C1470.K_METHOD_NO
 		
 	End if 
 	
@@ -1136,38 +850,259 @@ Function GetWidgetMethodInfo($widget : Object; $name : Text) : Integer
 		 || (Length:C16($method)>5)\
 		 || ($method#"@.4dm")
 		
-		return 2  // 2 project method
+		return This:C1470.K_METHOD_PROJECT
 		
 	End if 
 	
 	If ($method#"ObjectMethods/@")
 		
-		return 3  // 3 custom
+		return This:C1470.K_METHOD_CUSTOM
 		
 	End if 
-	var $objmethod : Text
-	$objmethod:=Substring:C12($method; 0; Length:C16($method)-4)
-	var $l : Integer
-	$l:=Length:C16("ObjectMethods/")
-	$objmethod:=Substring:C12($method; $l+1; Length:C16($objmethod)-$l)
 	
+	
+	$method:=Substring:C12($method; 0; Length:C16($method)-4)
 	$pathname:=This:C1470.EncodeReservedFileCharacters($name)
 	
-	If (This:C1470.Strcmp($objmethod; $pathname))
+	If (This:C1470.Strcmp($method; $pathname))
 		
-		return 1  // 1 std method : methode name match object name, object method file is the ObjectMethods folder
+		return This:C1470.K_METHOD_FILE
 		
 	Else 
 		
-		return 3  // 3 custom
+		return This:C1470.K_METHOD_CUSTOM
 		
 	End if 
 	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function MakeUniqueObjectName($wanted : Text; $exclusions : Collection; $withFreeMethodFile : Boolean) : Text
 	
+	var $methodFolderPath; $name; $tmpName; $tmpScriptName : Text
+	var $found : Boolean
+	var $counter : Integer
+	var $names : Collection
 	
+	// ⚠️ Important
+	// This code don't use strict string compare (This.Strcmp)
+	// Because 4D object name is not case sensitive
 	
+	If ($wanted="")
+		
+		return 
+		
+	End if 
 	
+	$names:=This:C1470.GetObjectNames(This:C1470.K_PAGE_MORE)
 	
+	If ($names.length=0)
+		
+		return $wanted
+		
+	End if 
+	
+	$tmpName:=$wanted
+	
+	If ($withFreeMethodFile)
+		
+		$methodFolderPath:=This:C1470.objectMethodFolder.platformPath
+		
+	End if 
+	
+	Repeat 
+		
+		$found:=False:C215
+		
+		For each ($name; $names)
+			
+			If ($tmpName=$name)
+				
+				$found:=True:C214
+				break
+				
+			End if 
+		End for each 
+		
+		// Groups
+		If (Not:C34($found))\
+			 && (This:C1470.groupNames.length>0)
+			
+			For each ($name; This:C1470.groupNames)
+				
+				If ($tmpName=$name)
+					
+					$found:=True:C214
+					break
+					
+				End if 
+			End for each 
+		End if 
+		
+		// Look in exclusion list
+		If (Not:C34($found))\
+			 && ($exclusions#Null:C1517)
+			
+			For each ($name; $exclusions)
+				
+				If ($tmpName=$name)
+					
+					$found:=True:C214
+					break
+					
+				End if 
+			End for each 
+		End if 
+		
+		// Test method file name
+		If (Not:C34($found)\
+			 && $withFreeMethodFile)
+			
+			$tmpScriptName:=This:C1470.EncodeReservedFileCharacters($tmpName)
+			$found:=(Test path name:C476($methodFolderPath+$tmpScriptName+".4dm")=Is a document:K24:1)
+			
+		End if 
+		
+		If ($found)
+			
+			$counter+=1
+			$tmpName:=$wanted+String:C10($counter)
+			
+		Else 
+			
+			return $tmpName
+			
+		End if 
+	Until (False:C215)
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function InsertFormObjectAfter($newName : Text; $newObject : Object; $afterName : Text) : Boolean
+	
+	var $property : Text
+	var $newObjects; $objects : Object
+	
+	$objects:=This:C1470.editor.currentPage.objects
+	
+	If ($newName="")\
+		 | ($objects[$newName]#Null:C1517)
+		
+		return 
+		
+	End if 
+	
+	If ($afterName="")
+		
+		$objects[$newName]:=$newObject
+		
+	Else 
+		
+		$newObjects:={}
+		
+		For each ($property; $objects)
+			
+			$newObjects[$property]:=$objects[$property]
+			
+			If (This:C1470.Strcmp($property; $afterName))
+				
+				$newObjects[$newName]:=$newObject
+				
+			End if 
+		End for each 
+		
+		This:C1470.editor.currentPage.objects:=$newObjects
+		
+	End if 
+	
+	return True:C214
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function InsertFormObjectBefore($newName : Text; $newObject : Object; $beforeName : Text) : Boolean
+	
+	var $property : Text
+	var $newObjects; $objects : Object
+	
+	$objects:=This:C1470.editor.currentPage.objects
+	
+	If ($newName="")\
+		 | ($objects[$newName]#Null:C1517)
+		
+		return 
+		
+	End if 
+	
+	$newObjects:={}
+	
+	If ($beforeName="")
+		
+		$newObjects[$newName]:=$newObject
+		
+	Else 
+		
+		For each ($property; $objects)
+			
+			If (This:C1470.Strcmp($property; $beforeName))
+				
+				$newObjects[$newName]:=$newObject
+				
+			End if 
+			
+			$newObjects[$property]:=$objects[$property]
+			
+		End for each 
+		
+		This:C1470.editor.currentPage.objects:=$newObjects
+		
+	End if 
+	
+	return True:C214
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function RenameObject($old : Text; $new : Text) : Boolean
+	
+	var $property : Text
+	var $indx : Integer
+	var $newObjects; $objects : Object
+	
+	If (This:C1470.Exists($old; True:C214))
+		
+		If (Not:C34(This:C1470.Exists($new; True:C214)))
+			
+			$objects:=This:C1470.editor.currentPage.objects
+			
+			$newObjects:={}
+			
+			For each ($property; $objects)
+				
+				If ($property=$old)
+					
+					$newObjects[$new]:=$objects[$property]
+					
+				Else 
+					
+					$newObjects[$property]:=$objects[$property]
+					
+				End if 
+			End for each 
+			
+			This:C1470.editor.currentPage.objects:=$newObjects
+			
+			If (This:C1470.isSelected($old))
+				
+				This:C1470.Deselect($old)
+				This:C1470.Select($new)
+				
+			End if 
+			
+			$indx:=This:C1470.FindInEntryOrder($old)
+			
+			If ($indx#-1)
+				
+				This:C1470.entryOrder[$indx]:=$new
+				
+			End if 
+			
+			return True:C214
+			
+		End if 
+	End if 
 	
 	// Mark:-Entry Order
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
@@ -1259,7 +1194,7 @@ Function ClearEntryOrder($reset : Boolean)
 	
 	// Mark:-Groups
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
-Function get groupNames : Collection
+Function get groupNames() : Collection
 	
 	var $name : Text
 	var $groups : Object
@@ -1429,7 +1364,7 @@ Function _getPage($pageNumber : Integer) : Object
 		
 	Else 
 		
-		If ($pageNumber=This:C1470.CURRENT_PAGE)
+		If ($pageNumber=This:C1470.K_PAGE_CURRENT)
 			
 			return This:C1470.editor.currentPage
 			
@@ -1437,12 +1372,68 @@ Function _getPage($pageNumber : Integer) : Object
 	End if 
 	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
-	//returs the default values object
+	// Returs the default values object
 Function get _defaultValues : Object
 	
 	var $file : 4D:C1709.File
 	$file:=This:C1470.appResources.file("DefaultJsonForm.json")
 	return $file.exists ? JSON Parse:C1218($file.getText()) : {}
+	
+	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Function _buildObjectGroups($pageNumber : Integer) : Object
+	
+	var $name; $objName : Text
+	var $foundInPage : Integer
+	var $groups; $page; $pageGroup : Object
+	var $objects : Collection
+	
+	$page:=This:C1470._getPage($pageNumber)
+	
+	If ($page=Null:C1517)\
+		 | (This:C1470.editor.form.editor=Null:C1517)\
+		 | (This:C1470.editor.form.editor.groups=Null:C1517)
+		
+		return 
+		
+	End if 
+	
+	$pageGroup:={}
+	$groups:=This:C1470.editor.form.editor.groups
+	
+	For each ($name; $groups)
+		
+		$objects:=$groups[$name]
+		
+		If ($objects.length>0)
+			
+			For each ($objName; $objects)
+				
+				If ($objName="")
+					
+					continue
+					
+				End if 
+				
+				If (This:C1470.Exists($objName; True:C214; ->$foundInPage))
+					
+					If ($foundInPage=$pageNumber)
+						
+						$pageGroup[$name]:=$objects.copy()
+						
+					End if 
+					
+					break
+					
+				End if 
+			End for each 
+		End if 
+	End for each 
+	
+	If (Not:C34(OB Is empty:C1297($pageGroup)))
+		
+		return $pageGroup
+		
+	End if 
 	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 Function _setCollector($ptr : Pointer; $value)
