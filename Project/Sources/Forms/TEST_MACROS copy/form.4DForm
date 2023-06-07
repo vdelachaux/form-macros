@@ -151,7 +151,7 @@
 					"left": 394,
 					"width": 16,
 					"height": 16,
-					"picture": "Images/Icon_455_1.png"
+					"picture": "Images/Icon_455.png"
 				},
 				"Check Box": {
 					"type": "checkbox",
@@ -193,7 +193,7 @@
 			}
 		}
 	],
-	"geometryStamp": 83,
+	"geometryStamp": 100,
 	"editor": {
 		"activeView": "View 1",
 		"defaultView": "View 1",

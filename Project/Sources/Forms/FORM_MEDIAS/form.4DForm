@@ -41,7 +41,7 @@
 					"text": "Button",
 					"top": 0,
 					"left": 0,
-					"width": 450,
+					"width": 470,
 					"height": 10,
 					"events": [
 						"onClick"
@@ -57,7 +57,7 @@
 				"Rectangle": {
 					"type": "rectangle",
 					"top": 0,
-					"left": 461,
+					"left": 481,
 					"width": 320,
 					"height": 31,
 					"stroke": "transparent",
@@ -68,7 +68,7 @@
 					"type": "listbox",
 					"left": 0,
 					"top": 0,
-					"width": 460,
+					"width": 480,
 					"height": 345,
 					"events": [
 						"onClick",
@@ -90,7 +90,26 @@
 					"hideExtraBlankRows": false,
 					"sizingX": "grow",
 					"resizingMode": "rightToLeft",
+					"rowHeight": "32px",
 					"columns": [
+						{
+							"header": {
+								"name": "Header6"
+							},
+							"name": "Column6",
+							"dataSource": "This:C1470.typeIcon",
+							"footer": {
+								"name": "Footer6"
+							},
+							"dataSourceTypeHint": "text",
+							"enterable": false,
+							"width": 30,
+							"minWidth": 30,
+							"maxWidth": 30,
+							"resizable": false,
+							"pictureFormat": "truncatedCenter",
+							"textAlign": "center"
+						},
 						{
 							"header": {
 								"text": "Object",
@@ -128,7 +147,7 @@
 						{
 							"header": {
 								"name": "Header1",
-								"text": "Source"
+								"text": "Folder"
 							},
 							"name": "Column1",
 							"footer": {
@@ -154,7 +173,7 @@
 								"name": "Footer3"
 							},
 							"enterable": false,
-							"dataSource": "\"✅\"*Num:C11(This:C1470.dark.exists)",
+							"dataSource": "This:C1470.darkOK",
 							"width": 50,
 							"textAlign": "center",
 							"resizable": false
@@ -169,7 +188,7 @@
 								"name": "Footer4"
 							},
 							"width": 50,
-							"dataSource": "\"✅\"*Num:C11(This:C1470.HD.exists)",
+							"dataSource": "This:C1470.hdOK",
 							"resizable": false,
 							"enterable": false,
 							"textAlign": "center"
@@ -186,14 +205,14 @@
 							"width": 60,
 							"resizable": false,
 							"enterable": false,
-							"dataSource": "\"✅\"*Num:C11(This:C1470.HDDark.exists)",
+							"dataSource": "This:C1470.hdDarkOK",
 							"textAlign": "center"
 						}
 					]
 				},
 				"Input": {
 					"type": "input",
-					"left": 480,
+					"left": 500,
 					"top": 40,
 					"width": 282,
 					"height": 289,
@@ -213,7 +232,7 @@
 				"view": {
 					"type": "button",
 					"top": 7,
-					"left": 464,
+					"left": 484,
 					"width": 16,
 					"height": 16,
 					"events": [
@@ -231,7 +250,7 @@
 				},
 				"Splitter": {
 					"type": "splitter",
-					"left": 460,
+					"left": 480,
 					"top": 0,
 					"width": 1,
 					"height": 345,
@@ -242,7 +261,7 @@
 				"delete": {
 					"type": "button",
 					"top": 7,
-					"left": 512,
+					"left": 532,
 					"width": 16,
 					"height": 16,
 					"events": [
@@ -258,7 +277,7 @@
 				"move": {
 					"type": "button",
 					"top": 7,
-					"left": 488,
+					"left": 508,
 					"width": 16,
 					"height": 16,
 					"events": [
@@ -273,14 +292,14 @@
 				"Line": {
 					"type": "line",
 					"top": 31,
-					"left": 460,
+					"left": 480,
 					"width": 321,
 					"height": 0,
 					"sizingX": "grow"
 				},
 				"name": {
 					"type": "input",
-					"left": 533,
+					"left": 553,
 					"top": 7,
 					"width": 229,
 					"height": 17,
@@ -292,7 +311,7 @@
 					"type": "text",
 					"text": "This object refers to a media that has not been found.",
 					"top": 44,
-					"left": 481,
+					"left": 501,
 					"width": 267,
 					"height": 46,
 					"stroke": "#ff0000",
@@ -302,7 +321,7 @@
 			}
 		}
 	],
-	"geometryStamp": 403,
+	"geometryStamp": 417,
 	"method": "method.4dm",
 	"editor": {
 		"activeView": "View 1",

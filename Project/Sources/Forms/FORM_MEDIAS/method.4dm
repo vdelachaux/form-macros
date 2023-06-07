@@ -44,10 +44,14 @@ Case of
 		
 		SET TIMER:C645(0)
 		
-		var $file : 4D:C1709.File
-		$file:=Form:C1466.current ? Form:C1466.current.media : Null:C1517
+		var $cur : Object
+		$cur:=Form:C1466.current
 		
-		var $media : Picture
+		var $file : 4D:C1709.File
+		$file:=$cur ? $cur.media : Null:C1517
+		
+		var $bkg; $media : Picture
+		var $width; $height : Integer
 		
 		If ($file#Null:C1517)
 			
@@ -55,15 +59,37 @@ Case of
 			
 			If ($file.exists)
 				
-				If (FORM Get color scheme:C1761="dark") && (Form:C1466.current.dark.exists)
+				If (FORM Get color scheme:C1761="dark")\
+					 && ($cur.dark.exists)
 					
-					READ PICTURE FILE:C678(Form:C1466.current.dark.platformPath; $media)
+					READ PICTURE FILE:C678($cur.dark.platformPath; $media)
 					
 				Else 
 					
 					READ PICTURE FILE:C678($file.platformPath; $media)
 					
 				End if 
+				
+				If ($cur.bkgMedia#Null:C1517)
+					
+					If (FORM Get color scheme:C1761="dark")\
+						 && ($cur.bkgDark.exists)
+						
+						READ PICTURE FILE:C678($cur.bkgDark.platformPath; $bkg)
+						
+					Else 
+						
+						READ PICTURE FILE:C678($cur.bkgMedia.platformPath; $bkg)
+						
+					End if 
+					
+					PICTURE PROPERTIES:C457($media; $width; $height)
+					CREATE THUMBNAIL:C679($bkg; $bkg; $width; $height; Scaled to fit:K6:2)
+					$media:=$bkg & $media
+					
+				End if 
+				
+				
 				
 				OBJECT SET ENABLED:C1123(*; "view"; True:C214)
 				OBJECT SET VISIBLE:C603(*; "alert"; False:C215)
@@ -82,7 +108,7 @@ Case of
 			OBJECT SET VISIBLE:C603(*; "move"; True:C214)
 			
 			ASSERT:C1129(Not:C34(Shift down:C543))
-			OBJECT SET ENABLED:C1123(*; "delete"; (Form:C1466.current.page<0) | (Form:C1466.current.pageNumber=$helper.editor.currentPageNumber))
+			OBJECT SET ENABLED:C1123(*; "delete"; ($cur.page<0) | ($cur.pageNumber=$helper.pageNumber))
 			
 		Else 
 			

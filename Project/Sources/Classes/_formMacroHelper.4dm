@@ -6,15 +6,21 @@ property UI_FORM : Text  // Form name to display
 property UI_DATA : Object  // Form data
 property RESULT : cs:C1710._formMacroResult  // Form Editor Macro Proxy object returning properties modified by the macro
 
+property resourcesFolder : 4D:C1709.Folder  // The host project resources folder
+property appResourcesFolder : 4D:C1709.Folder  // The application resources folder
+
 Class constructor($macro : Object)
 	
 	This:C1470.macro:=$macro
 	
 	This:C1470.resourcesFolder:=Folder:C1567(Folder:C1567(fk resources folder:K87:11; *).platformPath; fk platform path:K87:2)  // Un-sandboxed
 	
-	This:C1470.appResources:=Is macOS:C1572\
+	This:C1470.appResourcesFolder:=Is macOS:C1572\
 		 ? Folder:C1567(Application file:C491; fk platform path:K87:2).folder("Contents/Resources")\
 		 : File:C1566(Application file:C491; fk platform path:K87:2).parent.folder("Resources")
+	
+	This:C1470.darkSuffix:="_dark"
+	This:C1470.hdSuffix:="@2x"
 	
 	// Page number for search
 	// >=0 look in editor.form[page number]
@@ -22,12 +28,13 @@ Class constructor($macro : Object)
 	This:C1470.K_PAGE_MORE:=-2  // -2 look in editor.currentPage for current page , and editor.form for other
 	This:C1470.K_PAGE_ALL:=-3  // -3 look in editor.form
 	
-	//Method type
+	// Method type
 	This:C1470.K_METHOD_NO:=0  // No method
 	This:C1470.K_METHOD_FILE:=1  // Method name match object name, file is the ObjectMethods folder
 	This:C1470.K_METHOD_PROJECT:=2  // Project method
 	This:C1470.K_METHOD_CUSTOM:=3  // Custom
 	
+	// Mark:-Standard suite
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function onInvoke($editor : Object)
 	
@@ -59,12 +66,35 @@ Function onError($editor : cs:C1710._formMacroEditor; $result : cs:C1710._formMa
 	
 	ALERT:C41($errors.extract("message").join("\n"))
 	
+	// Mark:-Utility functions
 	//=== === === === === === === === === === === === === === === === === === === === === === ===
 Function OpenWindow($name : Text) : Integer
 	
 	// TODO: Center to the current form window
 	return Open form window:C675($name; Movable form dialog box:K39:8; Horizontally centered:K39:1; Vertically centered:K39:4; *)
 	
+	//=== === === === === === === === === === === === === === === === === === === === === === ===
+Function ObjectIcons() : Object
+	
+	var $dark; $t : Text
+	var $icon : Picture
+	var $icons : Object
+	
+	$dark:=This:C1470.darkSuffix*Num:C11(FORM Get color scheme:C1761="dark")
+	
+	$icons:={}
+	
+	For each ($t; ["button"; "picture"; "listbox"])
+		
+		READ PICTURE FILE:C678(Folder:C1567(fk resources folder:K87:11).file("Images/objects/"+$t+$dark+".png").platformPath; $icon)
+		TRANSFORM PICTURE:C988($icon; Crop:K61:7; 0; 0; 28; 28)
+		$icons[$t]:=$icon
+		
+	End for each 
+	
+	return $icons
+	
+	// Mark:-
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get file() : 4D:C1709.File
 	
@@ -79,6 +109,11 @@ Function get name : Text
 Function get pageCount : Integer
 	
 	return This:C1470.editor.form.pages.length
+	
+	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
+Function get pageNumber : Integer
+	
+	return This:C1470.editor.currentPageNumber
 	
 	// <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==> <==>
 Function get objectMethodFolder : 4D:C1709.Folder
@@ -1376,7 +1411,7 @@ Function _getPage($pageNumber : Integer) : Object
 Function get _defaultValues : Object
 	
 	var $file : 4D:C1709.File
-	$file:=This:C1470.appResources.file("DefaultJsonForm.json")
+	$file:=This:C1470.appResourcesFolder.file("DefaultJsonForm.json")
 	return $file.exists ? JSON Parse:C1218($file.getText()) : {}
 	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
@@ -1447,6 +1482,38 @@ Function _setCollector($ptr : Pointer; $value)
 	$ptr->:=$value
 	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Function _resolveProxy($path : Text) : 4D:C1709.File
+	
+	Case of 
+			//______________________________________________________
+		: ($path="/RESOURCES/@")
+			
+			return This:C1470.resourcesFolder.file(Delete string:C232($path; 1; 11))
+			
+			//______________________________________________________
+		: ($path="#@")
+			
+			return This:C1470.resourcesFolder.file(Delete string:C232($path; 1; 1))
+			
+			//______________________________________________________
+		: ($path="/.PRODUCT_RESOURCES/@")
+			
+			return This:C1470.appResourcesFolder.file(Delete string:C232($path; 1; 20))
+			
+			//______________________________________________________
+		: ($path="|@")
+			
+			return This:C1470.appResourcesFolder.file(Delete string:C232($path; 1; 1))
+			
+			//______________________________________________________
+		Else 
+			
+			return This:C1470.folder.file($path)
+			
+			//______________________________________________________
+	End case 
+	
+	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 Function _meta($test; $target : Text) : Object
 	
 	var $style : Object
@@ -1479,7 +1546,15 @@ Function _meta($test; $target : Text) : Object
 						
 						$style.cell[$target].stroke:="red"
 						
+					Else 
+						
+						If ($test["bkgMedia"] && Not:C34($test["bkgMedia"].exists))
+							
+							$style.cell[$target].stroke:="red"
+							
+						End if 
 					End if 
+					
 					//…………………………………………………………………………………………………………………
 			End case 
 			
