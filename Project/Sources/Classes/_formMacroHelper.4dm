@@ -2,9 +2,12 @@
 property macro : cs:C1710._formMacroDeclaration  // Macro declaration object (in the formMacros.json file)
 property form : Object  // Form Editor Macro Proxy object containing the form properties
 property editor : cs:C1710._formMacroEditor  // A copy of all the elements of the form with their current values
+
 property UI_FORM : Text  // Form name to display
 property UI_DATA : Object  // Form data
+
 property RESULT : cs:C1710._formMacroResult  // Form Editor Macro Proxy object returning properties modified by the macro
+property FORM_RESULT : Object  // Resulting form if the macro modifies objects that are not in the current page
 
 property resourcesFolder : 4D:C1709.Folder  // The host project resources folder
 property appResourcesFolder : 4D:C1709.Folder  // The application resources folder
@@ -12,7 +15,6 @@ property appResourcesFolder : 4D:C1709.Folder  // The application resources fold
 Class constructor($macro : Object)
 	
 	This:C1470.macro:=$macro
-	
 	This:C1470.resourcesFolder:=Folder:C1567(Folder:C1567(fk resources folder:K87:11; *).platformPath; fk platform path:K87:2)  // Un-sandboxed
 	
 	This:C1470.appResourcesFolder:=Is macOS:C1572\
@@ -34,9 +36,11 @@ Class constructor($macro : Object)
 	This:C1470.K_METHOD_PROJECT:=2  // Project method
 	This:C1470.K_METHOD_CUSTOM:=3  // Custom
 	
+	This:C1470.CONFIRM:=False:C215
+	
 	// Mark:-Standard suite
 	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function onInvoke($editor : Object)
+Function onInvoke($editor : Object) : Object
 	
 	This:C1470.form:=$editor
 	This:C1470.editor:=$editor.editor
@@ -44,8 +48,15 @@ Function onInvoke($editor : Object)
 	var $key : Text
 	For each ($key; This:C1470.editor)
 		
-		This:C1470["_"+$key]:=This:C1470.editor[$key]
-		
+		If (Value type:C1509(This:C1470.editor[$key])=Is object:K8:27)
+			
+			This:C1470["_"+$key]:=OB Copy:C1225(This:C1470.editor[$key])
+			
+		Else 
+			
+			This:C1470["_"+$key]:=This:C1470.editor[$key]
+			
+		End if 
 	End for each 
 	
 	// MARK:Display UI
@@ -58,6 +69,8 @@ Function onInvoke($editor : Object)
 		
 		DIALOG:C40(This:C1470.UI_FORM; This:C1470.UI_DATA)
 		CLOSE WINDOW:C154(This:C1470.UI_DATA.winRef)
+		
+		return This:C1470.resume()
 		
 	End if 
 	
@@ -72,6 +85,38 @@ Function OpenWindow($name : Text) : Integer
 	
 	// TODO: Center to the current form window
 	return Open form window:C675($name; Movable form dialog box:K39:8; Horizontally centered:K39:1; Vertically centered:K39:4; *)
+	
+	//=== === === === === === === === === === === === === === === === === === === === === === ===
+Function resume() : Object
+	
+	If (This:C1470.FORM_RESULT#Null:C1517)
+		
+		// Set the entire form file
+		If (This:C1470.CONFIRM)
+			
+			CONFIRM:C162("Would you like to save your changes?"; "Save"; "Discard")
+			
+		Else 
+			
+			OK:=1
+			
+		End if 
+		
+		If (Bool:C1537(OK))
+			
+			This:C1470.editor.file.setText(JSON Stringify:C1217(This:C1470.FORM_RESULT; *))
+			
+		End if 
+		
+	Else 
+		
+		If (This:C1470.RESULT#Null:C1517) && (Not:C34(OB Is empty:C1297(This:C1470.RESULT)))
+			
+			// Return current page modified widgets
+			return This:C1470.RESULT
+			
+		End if 
+	End if 
 	
 	//=== === === === === === === === === === === === === === === === === === === === === === ===
 Function ObjectIcons() : Object

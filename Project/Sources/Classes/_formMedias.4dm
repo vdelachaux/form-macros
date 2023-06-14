@@ -7,18 +7,7 @@ Class constructor($macro : Object)
 	Super:C1705($macro)
 	
 	This:C1470.UI_FORM:="FORM_MEDIAS"
-	This:C1470.RESULT:=cs:C1710._formMacroResult.new()
-	
-	// === === === === === === === === === === === === === === === === === === === === === === ===
-Function onInvoke($editor : Object) : Object
-	
-	Super:C1706.onInvoke($editor)
-	
-	If (Not:C34(OB Is empty:C1297(This:C1470.RESULT)))
-		
-		return This:C1470.RESULT
-		
-	End if 
+	This:C1470.CONFIRM:=True:C214
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function LoadMedias() : Collection
