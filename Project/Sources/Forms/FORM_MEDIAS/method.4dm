@@ -35,6 +35,15 @@ Case of
 		End if 
 		
 		//______________________________________________________
+	: ($e.code=On Clicked:K2:4)
+		
+		If (OB Instance of:C1731($helper[$e.objectName]; 4D:C1709.Function))
+			
+			Form:C1466.list:=$helper[$e.objectName](Form:C1466.current) || Form:C1466.list
+			
+		End if 
+		
+		//______________________________________________________
 	: ($e.code=On Selection Change:K2:29)
 		
 		SET TIMER:C645(-1)
@@ -44,11 +53,11 @@ Case of
 		
 		SET TIMER:C645(0)
 		
-		var $cur : Object
-		$cur:=Form:C1466.current
+		var $current : Object
+		$current:=Form:C1466.current
 		
 		var $file : 4D:C1709.File
-		$file:=$cur ? $cur.media : Null:C1517
+		$file:=$current ? $current.media : Null:C1517
 		
 		var $bkg; $media : Picture
 		var $width; $height : Integer
@@ -60,9 +69,9 @@ Case of
 			If ($file.exists)
 				
 				If (FORM Get color scheme:C1761="dark")\
-					 && ($cur.dark.exists)
+					 && ($current.dark.exists)
 					
-					READ PICTURE FILE:C678($cur.dark.platformPath; $media)
+					READ PICTURE FILE:C678($current.dark.platformPath; $media)
 					
 				Else 
 					
@@ -70,16 +79,16 @@ Case of
 					
 				End if 
 				
-				If ($cur.bkgMedia#Null:C1517)
+				If ($current.bkgMedia#Null:C1517)
 					
 					If (FORM Get color scheme:C1761="dark")\
-						 && ($cur.bkgDark.exists)
+						 && ($current.bkgDark.exists)
 						
-						READ PICTURE FILE:C678($cur.bkgDark.platformPath; $bkg)
+						READ PICTURE FILE:C678($current.bkgDark.platformPath; $bkg)
 						
 					Else 
 						
-						READ PICTURE FILE:C678($cur.bkgMedia.platformPath; $bkg)
+						READ PICTURE FILE:C678($current.bkgMedia.platformPath; $bkg)
 						
 					End if 
 					
@@ -89,12 +98,9 @@ Case of
 					
 				End if 
 				
-				
-				
 				OBJECT SET ENABLED:C1123(*; "view"; True:C214)
 				OBJECT SET VISIBLE:C603(*; "alert"; False:C215)
-				OBJECT SET RGB COLORS:C628(*; "name"; -1)
-				
+				OBJECT SET RGB COLORS:C628(*; "name"; Foreground color:K23:1)
 				
 			Else 
 				
@@ -106,9 +112,7 @@ Case of
 			
 			OBJECT SET VISIBLE:C603(*; "delete"; True:C214)
 			OBJECT SET VISIBLE:C603(*; "move"; True:C214)
-			
-			ASSERT:C1129(Not:C34(Shift down:C543))
-			OBJECT SET ENABLED:C1123(*; "delete"; ($cur.page<0) | ($cur.pageNumber=$helper.pageNumber))
+			OBJECT SET ENABLED:C1123(*; "delete"; True:C214)
 			
 		Else 
 			

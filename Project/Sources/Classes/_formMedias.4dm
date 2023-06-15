@@ -7,7 +7,7 @@ Class constructor($macro : Object)
 	Super:C1705($macro)
 	
 	This:C1470.UI_FORM:="FORM_MEDIAS"
-	This:C1470.CONFIRM:=True:C214
+	This:C1470.RESULT_CONFIRMATION_REQUEST:=True:C214
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function LoadMedias() : Collection
@@ -114,6 +114,122 @@ Function LoadMedias() : Collection
 	End for each 
 	
 	return $c
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function view($current : Object) : Collection
+	
+	SHOW ON DISK:C922($current.media.platformPath)
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function delete($current : Object) : Collection
+	
+	var $widget : Object
+	
+	If ($current.page=-1)  // Unused
+		
+		If (This:C1470.INTL)
+			
+			CONFIRM:C162("Are you sure you want to remove this media?"; "Delete"; "Keep")
+			
+		Else 
+			
+			CONFIRM:C162("Êtes-vous certain de vouloir supprimer ce média ?"; "Supprimer"; "Garder")
+			
+		End if 
+		
+		If (OK=0)
+			
+			return 
+			
+		End if 
+		
+		$current.media.delete()
+		
+		If ($current.dark#Null:C1517)
+			$current.dark.delete()
+			
+		End if 
+		
+		If ($current.HD#Null:C1517)
+			
+			$current.HD.delete()
+			
+		End if 
+		
+		If ($current.HDDark#Null:C1517)
+			
+			$current.HDDark.delete()
+			
+		End if 
+		
+	Else 
+		
+		This:C1470.RESULT_FORM:=This:C1470.RESULT_FORM || This:C1470._form
+		
+		Case of 
+				
+				//______________________________________________________
+			: ($current.type="button")
+				
+				$widget:=This:C1470.RESULT_FORM.pages[$current.pageNumber].objects[$current.name]
+				OB REMOVE:C1226($widget; "icon")
+				OB REMOVE:C1226($widget; "iconFrames")
+				
+				$current.icon:=Null:C1517
+				
+				//______________________________________________________
+			: ($current.type="picture")
+				
+				$widget:=This:C1470.RESULT_FORM.pages[$current.pageNumber].objects[$current.name]
+				OB REMOVE:C1226($widget; "picture")
+				
+				$current.picture:=Null:C1517
+				
+				//______________________________________________________
+			: ($current.header#Null:C1517)
+				
+				var $widgets : Object
+				$widgets:=This:C1470.RESULT_FORM.pages[$current.pageNumber].objects
+				
+				var $key : Text
+				var $column : Object
+				For each ($key; $widgets) While ($widget=Null:C1517)
+					
+					If ($widgets[$key].columns=Null:C1517)
+						
+						continue  // Not a listbox
+						
+					End if 
+					
+					For each ($column; $widgets[$key].columns)
+						
+						If ($column.header.name=$current.name)
+							
+							$widget:=$column.header
+							break
+							
+						End if 
+					End for each 
+				End for each 
+				
+				If ($widget#Null:C1517)
+					
+					OB REMOVE:C1226($widget; "icon")
+					
+					OB REMOVE:C1226($current.header; "icon")
+					
+				End if 
+				
+				//______________________________________________________
+			Else 
+				
+				ASSERT:C1129(Structure file:C489#Structure file:C489(*))
+				
+				//______________________________________________________
+		End case 
+	End if 
+	
+	return This:C1470.LoadMedias()
 	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 Function _source($path : Text) : Text

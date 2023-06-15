@@ -4,27 +4,23 @@ Class constructor($macro : Object)
 	
 	Super:C1705($macro)
 	
+	This:C1470.UI_FORM:="FORM_STYLE_SHEETS"
+	//This.RESULT:=cs._formMacroResult.new()
+	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function onInvoke($editor : Object) : Object
 	
-	var $data : Object
-	var $result : Object
-	
 	Super:C1706.onInvoke($editor)
 	
-	$data:=New object:C1471(\
-		"result"; False:C215; \
-		"helper"; This:C1470; \
-		"winRef"; This:C1470.OpenWindow("FORM_STYLE_SHEETS"; Movable form dialog box:K39:8))
+	var $data : Object
+	$data:=This:C1470.UI_DATA
 	
-	DIALOG:C40("FORM_STYLE_SHEETS"; $data)
-	CLOSE WINDOW:C154($data.winRef)
-	
-	$result:=New object:C1471
-	
-	If ($data.result=True:C214)
+	If (Bool:C1537($data.result))
 		
-		$result.formProperties:=$editor.editor.formProperties
+		var $result : Object
+		$result:={\
+			formProperties: $editor.editor.formProperties\
+			}
 		
 		If ($data.css=Null:C1517)
 			
@@ -35,6 +31,7 @@ Function onInvoke($editor : Object) : Object
 			$result.formProperties.css:=$data.css
 			
 		End if 
+		
+		return $result
+		
 	End if 
-	
-	return $result

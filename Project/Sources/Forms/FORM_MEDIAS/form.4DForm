@@ -13,6 +13,7 @@
 	"bottomMargin": 0,
 	"events": [
 		"onLoad",
+		"onClick",
 		"onActivate",
 		"onDataChange",
 		"onTimer",
@@ -241,7 +242,6 @@
 					"textPlacement": "right",
 					"style": "custom",
 					"visibility": "hidden",
-					"method": "ObjectMethods/view.4dm",
 					"class": "mini link",
 					"fontWeight": "bold",
 					"icon": "/.PRODUCT_RESOURCES/Internal Components/development.4dbase/Resources/images/formEditor/view.png",
@@ -271,8 +271,7 @@
 					"icon": "/.PRODUCT_RESOURCES/Internal Components/development.4dbase/Resources/images/formEditor/layers1/deleteView.png",
 					"iconFrames": 4,
 					"style": "custom",
-					"sizingY": "fixed",
-					"method": "ObjectMethods/delete.4dm"
+					"sizingY": "fixed"
 				},
 				"move": {
 					"type": "button",
