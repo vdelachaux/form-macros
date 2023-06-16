@@ -42,6 +42,8 @@ Class constructor($macro : Object)
 	This:C1470.IS_READ_WRITE:=Bool:C1537(Get database parameter:C643(Is host database writable:K37:103))
 	This:C1470.INTL:=Command name:C538(1)="Sum"
 	
+	This:C1470.RELEASE:=Structure file:C489#Structure file:C489(*)
+	
 	// Mark:-Standard suite
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function onInvoke($editor : Object) : Object
@@ -434,7 +436,7 @@ Function GetObjectNamesInPage($page : Object) : Collection
 	If ($page=Null:C1517)\
 		 | ($page.objects=Null:C1517)
 		
-		ASSERT:C1129(Structure file:C489#Structure file:C489(*))  // Trace in dev mode
+		ASSERT:C1129(This:C1470.RELEASE)  // Trace in dev mode
 		return   // Null
 		
 	End if 
@@ -694,7 +696,7 @@ Function GetObjectInPage($page : Object; $name : Text; $typeCollector : Pointer)
 		 | ($page.objects=Null:C1517)\
 		 | (Length:C16($name)=0)
 		
-		ASSERT:C1129(Structure file:C489#Structure file:C489(*))  // Trace in dev mode
+		ASSERT:C1129(This:C1470.RELEASE)  // Trace in dev mode
 		return   // Null
 		
 	End if 
@@ -740,6 +742,20 @@ Function GetObjectInPage($page : Object; $name : Text; $typeCollector : Pointer)
 					End if 
 				End for each 
 			End if 
+		End if 
+	End for each 
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function getHeaderInListbox($listbox : Object; $name : Text) : Object
+	
+	var $column : Object
+	
+	For each ($column; $listbox.columns)
+		
+		If ($column.header.name=$name)
+			
+			return $column.header
+			
 		End if 
 	End for each 
 	
@@ -868,7 +884,7 @@ Function GetObjectMethodInfo($widget : Object; $name : Text) : Integer
 	
 	If ($widget=Null:C1517)
 		
-		ASSERT:C1129(Structure file:C489#Structure file:C489(*))  // Trace in dev mode
+		ASSERT:C1129(This:C1470.RELEASE)  // Trace in dev mode
 		return 
 		
 	End if 

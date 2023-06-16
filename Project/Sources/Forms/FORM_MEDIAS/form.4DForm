@@ -79,19 +79,17 @@
 					"singleClickEdit": false,
 					"dataSource": "Form:C1466.list",
 					"headerHeight": "2em",
-					"fontWeight": "normal",
 					"focusable": false,
 					"movableRows": true,
 					"listboxType": "collection",
-					"scrollbarVertical": "automatic",
 					"currentItemSource": "Form:C1466.current",
 					"currentItemPositionSource": "Form:C1466.position",
 					"selectedItemsSource": "Form:C1466.selected",
 					"metaSource": "Form:C1466.helper._meta(This:C1470; \"media\")",
-					"hideExtraBlankRows": false,
 					"sizingX": "grow",
 					"resizingMode": "rightToLeft",
 					"rowHeight": "32px",
+					"hideExtraBlankRows": false,
 					"columns": [
 						{
 							"header": {
@@ -113,7 +111,7 @@
 						},
 						{
 							"header": {
-								"text": "Object",
+								"text": "Name",
 								"name": "Entête1",
 								"verticalAlign": "middle",
 								"textAlign": "center"
@@ -148,7 +146,7 @@
 						{
 							"header": {
 								"name": "Header1",
-								"text": "Folder"
+								"text": "Source"
 							},
 							"name": "Column1",
 							"footer": {
@@ -232,8 +230,8 @@
 				},
 				"view": {
 					"type": "button",
-					"top": 7,
-					"left": 484,
+					"top": 8,
+					"left": 727,
 					"width": 16,
 					"height": 16,
 					"events": [
@@ -245,8 +243,8 @@
 					"class": "mini link",
 					"fontWeight": "bold",
 					"icon": "/.PRODUCT_RESOURCES/Internal Components/development.4dbase/Resources/images/formEditor/view.png",
-					"sizingY": "fixed",
-					"iconFrames": 4
+					"iconFrames": 4,
+					"sizingX": "move"
 				},
 				"Splitter": {
 					"type": "splitter",
@@ -260,8 +258,8 @@
 				},
 				"delete": {
 					"type": "button",
-					"top": 7,
-					"left": 532,
+					"top": 8,
+					"left": 775,
 					"width": 16,
 					"height": 16,
 					"events": [
@@ -271,12 +269,12 @@
 					"icon": "/.PRODUCT_RESOURCES/Internal Components/development.4dbase/Resources/images/formEditor/layers1/deleteView.png",
 					"iconFrames": 4,
 					"style": "custom",
-					"sizingY": "fixed"
+					"sizingX": "move"
 				},
 				"move": {
 					"type": "button",
-					"top": 7,
-					"left": 508,
+					"top": 8,
+					"left": 751,
 					"width": 16,
 					"height": 16,
 					"events": [
@@ -286,7 +284,7 @@
 					"icon": "/.PRODUCT_RESOURCES/Internal Components/development.4dbase/Resources/images/formEditor/layers1/moveToView.png",
 					"iconFrames": 4,
 					"style": "custom",
-					"sizingY": "fixed"
+					"sizingX": "move"
 				},
 				"Line": {
 					"type": "line",
@@ -298,8 +296,8 @@
 				},
 				"name": {
 					"type": "input",
-					"left": 553,
-					"top": 7,
+					"left": 490,
+					"top": 8,
 					"width": 229,
 					"height": 17,
 					"dataSource": "Form:C1466.current.fullName",
@@ -320,7 +318,7 @@
 			}
 		}
 	],
-	"geometryStamp": 417,
+	"geometryStamp": 429,
 	"method": "method.4dm",
 	"editor": {
 		"activeView": "View 1",

@@ -39,7 +39,7 @@
 					"left": 107,
 					"width": 141,
 					"height": 31,
-					"picture": "Images/usage-externe.gif"
+					"picture": "Images/usage-externe.png"
 				},
 				"globalStaticPicture": {
 					"type": "picture",
@@ -55,44 +55,44 @@
 			"objects": {
 				"missingStaticPicture": {
 					"type": "picture",
-					"top": 77,
-					"left": 24,
+					"top": 26,
+					"left": 334,
 					"width": 141,
 					"height": 31,
 					"picture": "/RESOURCES/Images/missing.gif"
 				},
-				"regularButtonWithIcon": {
+				"buttonWithIcon": {
 					"type": "button",
 					"text": "Button",
-					"top": 128,
-					"left": 24,
+					"top": 89,
+					"left": 170,
 					"width": 141,
 					"height": 22,
 					"events": [
 						"onClick"
 					],
-					"icon": "/RESOURCES/Images/circle.png",
+					"icon": "/RESOURCES/Images/Tests/circle.png",
 					"textPlacement": "right",
 					"iconFrames": 4
 				},
 				"regularButtonMissingIcon": {
 					"type": "button",
 					"text": "Button",
-					"top": 170,
-					"left": 24,
+					"top": 89,
+					"left": 334,
 					"width": 141,
 					"height": 22,
 					"events": [
 						"onClick"
 					],
 					"style": "regular",
-					"icon": "/RESOURCES/Images/missing.gif"
+					"icon": "/RESOURCES/Images/icon.png"
 				},
 				"List Box": {
 					"type": "listbox",
-					"left": 185,
-					"top": 77,
-					"width": 331,
+					"left": 35,
+					"top": 205,
+					"width": 440,
 					"height": 132,
 					"events": [
 						"onClick",
@@ -106,7 +106,7 @@
 							"header": {
 								"text": "Header1",
 								"name": "listBoxHeaderWithIcon",
-								"icon": "/RESOURCES/Images/m_circle.png"
+								"icon": "/RESOURCES/Images/Tests/m_circle.png"
 							},
 							"name": "Column1",
 							"footer": {
@@ -118,7 +118,8 @@
 							"header": {
 								"name": "listboxHeaderFull",
 								"text": "Haeder 2",
-								"icon": "Images/Icon_455.png"
+								"icon": "Images/Icon_455.png",
+								"iconPlacement": "right"
 							},
 							"name": "Column2",
 							"footer": {
@@ -127,10 +128,10 @@
 						}
 					]
 				},
-				"TestButton": {
+				"customButton": {
 					"type": "button",
-					"top": 33,
-					"left": 361,
+					"top": 92,
+					"left": 35,
 					"width": 16,
 					"height": 16,
 					"events": [
@@ -147,17 +148,17 @@
 				},
 				"localStatictPictureFull": {
 					"type": "picture",
-					"top": 31,
-					"left": 394,
+					"top": 33,
+					"left": 280,
 					"width": 16,
 					"height": 16,
-					"picture": "Images/Icon_455_1.png"
+					"picture": "Images/Icon_455.png"
 				},
 				"Check Box": {
 					"type": "checkbox",
 					"text": "Checkbox",
-					"top": 218,
-					"left": 13,
+					"top": 144,
+					"left": 35,
 					"width": 98,
 					"height": 25,
 					"events": [
@@ -167,18 +168,18 @@
 				"Radio Button": {
 					"type": "radio",
 					"text": "Radio",
-					"top": 233,
-					"left": 151,
+					"top": 173,
+					"left": 35,
 					"width": 89,
 					"height": 25,
 					"events": [
 						"onClick"
 					]
 				},
-				"customButton": {
+				"customButtonWithBackround": {
 					"type": "button",
-					"top": 232,
-					"left": 321,
+					"top": 77,
+					"left": 93,
 					"width": 51,
 					"height": 47,
 					"events": [
@@ -189,17 +190,30 @@
 					"iconFrames": 4,
 					"textAlign": "center",
 					"customBackgroundPicture": "Images/radio-back.svg"
+				},
+				"buttonWithFormIcon": {
+					"type": "button",
+					"text": "Button",
+					"top": 120,
+					"left": 170,
+					"width": 141,
+					"height": 32,
+					"events": [
+						"onClick"
+					],
+					"icon": "Images/project-32.png",
+					"textPlacement": "right",
+					"iconFrames": 4
 				}
 			}
 		}
 	],
-	"geometryStamp": 83,
+	"geometryStamp": 132,
 	"editor": {
 		"activeView": "View 1",
 		"defaultView": "View 1",
 		"views": {
 			"View 1": {}
 		}
-	},
-	"method": "method.4dm"
+	}
 }

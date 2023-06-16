@@ -26,7 +26,7 @@ Function LoadMedias() : Collection
 		
 		If ($o=Null:C1517)
 			
-			ASSERT:C1129(Structure file:C489#Structure file:C489(*))  // Trace in dev mode
+			ASSERT:C1129(This:C1470.RELEASE)  // Trace in dev mode
 			continue
 			
 		End if 
@@ -113,7 +113,7 @@ Function LoadMedias() : Collection
 		End if 
 	End for each 
 	
-	return $c
+	return $c.orderBy("pageNumber asc, name asc")
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function view($current : Object) : Collection
@@ -124,16 +124,23 @@ Function view($current : Object) : Collection
 Function delete($current : Object) : Collection
 	
 	var $widget : Object
+	var $choice; $menu : Text
 	
-	If ($current.page=-1)  // Unused
+	If ($current=Null:C1517)
+		
+		return 
+		
+	End if 
+	
+	If ($current.page=-1)  // Unused local picture
 		
 		If (This:C1470.INTL)
 			
-			CONFIRM:C162("Are you sure you want to remove this media?"; "Delete"; "Keep")
+			CONFIRM:C162("Are you sure?\r\rThis file will be deleted immediatly.\rYou can't undo this action."; "Delete"; "Keep")
 			
 		Else 
 			
-			CONFIRM:C162("Êtes-vous certain de vouloir supprimer ce média ?"; "Supprimer"; "Garder")
+			CONFIRM:C162("Êtes-vous certain ?\r\rCe fichier sera supprimé immédiatement.\rVous ne pouvez pas annuler cette action."; "Supprimer"; "Garder")
 			
 		End if 
 		
@@ -164,6 +171,23 @@ Function delete($current : Object) : Collection
 		
 	Else 
 		
+		If ($current.customBackgroundPicture#Null:C1517)
+			
+			$menu:=Create menu:C408
+			APPEND MENU ITEM:C411($menu; This:C1470.INTL ? "Foreground picture" : "Image d'avant-plan")
+			SET MENU ITEM PARAMETER:C1004($menu; -1; "main")
+			APPEND MENU ITEM:C411($menu; This:C1470.INTL ? "Background picture" : "Image de fond")
+			SET MENU ITEM PARAMETER:C1004($menu; -1; "back")
+			$choice:=Dynamic pop up menu:C1006($menu)
+			RELEASE MENU:C978($menu)
+			
+			If (Length:C16($choice)=0)
+				
+				return 
+				
+			End if 
+		End if 
+		
 		This:C1470.RESULT_FORM:=This:C1470.RESULT_FORM || This:C1470._form
 		
 		Case of 
@@ -172,10 +196,30 @@ Function delete($current : Object) : Collection
 			: ($current.type="button")
 				
 				$widget:=This:C1470.RESULT_FORM.pages[$current.pageNumber].objects[$current.name]
-				OB REMOVE:C1226($widget; "icon")
-				OB REMOVE:C1226($widget; "iconFrames")
 				
-				$current.icon:=Null:C1517
+				If ($choice="back")
+					
+					OB REMOVE:C1226($widget; "customBackgroundPicture")
+					
+					OB REMOVE:C1226($current; "customBackgroundPicture")
+					OB REMOVE:C1226($current; "bkgMedia")
+					
+				Else 
+					
+					OB REMOVE:C1226($widget; "icon")
+					OB REMOVE:C1226($widget; "iconFrames")
+					
+					OB REMOVE:C1226($current; "icon")
+					
+					If ($current.customBackgroundPicture#Null:C1517)
+						
+						OB REMOVE:C1226($widget; "customBackgroundPicture")
+						
+						OB REMOVE:C1226($current; "customBackgroundPicture")
+						OB REMOVE:C1226($current; "bkgMedia")
+						
+					End if 
+				End if 
 				
 				//______________________________________________________
 			: ($current.type="picture")
@@ -183,7 +227,7 @@ Function delete($current : Object) : Collection
 				$widget:=This:C1470.RESULT_FORM.pages[$current.pageNumber].objects[$current.name]
 				OB REMOVE:C1226($widget; "picture")
 				
-				$current.picture:=Null:C1517
+				OB REMOVE:C1226($current; "picture")
 				
 				//______________________________________________________
 			: ($current.header#Null:C1517)
@@ -223,13 +267,166 @@ Function delete($current : Object) : Collection
 				//______________________________________________________
 			Else 
 				
-				ASSERT:C1129(Structure file:C489#Structure file:C489(*))
+				ASSERT:C1129(This:C1470.RELEASE)
 				
 				//______________________________________________________
 		End case 
 	End if 
 	
 	return This:C1470.LoadMedias()
+	
+	// === === === === === === === === === === === === === === === === === === === === === === ===
+Function move($current : Object) : Collection
+	
+	var $old : Text
+	var $widget : Object
+	var $c : Collection
+	var $file : 4D:C1709.File
+	var $target : 4D:C1709.Folder
+	
+	This:C1470.RESULT_FORM:=This:C1470.RESULT_FORM || This:C1470._form
+	
+	If ($current.source="Form")
+		
+		// Mark:To RESOURCES/Images
+		$target:=Folder:C1567("/RESOURCES/Images"; *)
+		$target.create()
+		
+		$file:=$current.media
+		$old:=$current.path
+		
+		Case of 
+				
+				//______________________________________________________
+			: ($current.type="picture")
+				
+				$current.path:=$file.copyTo($target).path
+				$current.picture:=$current.path
+				$current.source:=This:C1470._source($current.path)
+				$current.media:=This:C1470._resolveProxy($current.path)
+				
+				$widget:=This:C1470.RESULT_FORM.pages[$current.pageNumber].objects[$current.name]
+				$widget.picture:=$current.path
+				
+				//______________________________________________________
+			: ($current.type="button")
+				
+				// TODO:icon
+				ASSERT:C1129(This:C1470.RELEASE)
+				
+				//______________________________________________________
+			: ($current.header#Null:C1517)
+				
+				// TODO:header
+				ASSERT:C1129(This:C1470.RELEASE)
+				
+				//______________________________________________________
+		End case 
+		
+		$file.delete()
+		
+	Else 
+		
+		// Mark:To FORM/Images
+		$target:=This:C1470.editor.file.parent.folder("Images")
+		$target.create()
+		
+		$file:=$current.media
+		
+		Case of 
+				
+				//______________________________________________________
+			: ($current.type="picture")
+				
+				$current.path:=Replace string:C233($file.copyTo($target).path; This:C1470.editor.file.parent.path; "")
+				$current.picture:=$current.path
+				$current.source:=This:C1470._source($current.path)
+				$current.media:=This:C1470._resolveProxy($current.path)
+				
+				$widget:=This:C1470.RESULT_FORM.pages[$current.pageNumber].objects[$current.name]
+				$widget.picture:=$current.path
+				
+				//______________________________________________________
+			: ($current.type="button")
+				
+				// TODO:icon
+				ASSERT:C1129(This:C1470.RELEASE)
+				
+				//______________________________________________________
+			: ($current.header#Null:C1517)
+				
+				// TODO:header
+				ASSERT:C1129(This:C1470.RELEASE)
+				
+				//______________________________________________________
+		End case 
+		
+		$file.delete()
+		
+	End if 
+	
+	// Mark:Dark & HD
+	If ($current.dark#Null:C1517)
+		
+		$current.dark:=$current.dark.copyTo($target)
+		
+	End if 
+	
+	If ($current.HD#Null:C1517)
+		
+		$current.HD:=$current.HD.copyTo($target)
+		
+	End if 
+	
+	If ($current.HDDark#Null:C1517)
+		
+		$current.HDDark:=$current.HDDark.copyTo($target)
+		
+	End if 
+	
+	$c:=This:C1470.LoadMedias()
+	
+	// Mark:Other widgets using the same media
+	For each ($widget; $c)
+		
+		If ($widget.path#$old)
+			
+			continue
+			
+		End if 
+		
+		$widget.path:=$current.path
+		
+		Case of 
+				
+				//______________________________________________________
+			: ($widget.type="picture")
+				
+				$widget.picture:=$current.picture
+				
+				//______________________________________________________
+			: ($widget.type="button")
+				
+				$widget.icon:=$current.icon
+				
+				//______________________________________________________
+			: ($widget.header#Null:C1517)
+				
+				// TODO:header
+				ASSERT:C1129(This:C1470.RELEASE)
+				
+				//______________________________________________________
+		End case 
+		
+		$widget.source:=$current.source
+		$widget.media:=$current.media
+		$widget.dark:=$current.dark
+		$widget.HD:=$current.HD
+		$widget.HDDark:=$current.HDDark
+		
+	End for each 
+	
+	return $c
 	
 	// *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 Function _source($path : Text) : Text
