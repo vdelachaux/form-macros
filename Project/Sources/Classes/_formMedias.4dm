@@ -118,7 +118,34 @@ Function LoadMedias() : Collection
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function view($current : Object) : Collection
 	
-	SHOW ON DISK:C922($current.media.platformPath)
+	var $choice; $menu : Text
+	
+	If ($current.customBackgroundPicture#Null:C1517)
+		
+		$menu:=Create menu:C408
+		APPEND MENU ITEM:C411($menu; This:C1470.INTL ? "Foreground picture" : "Image d'avant-plan")
+		SET MENU ITEM PARAMETER:C1004($menu; -1; "main")
+		APPEND MENU ITEM:C411($menu; This:C1470.INTL ? "Background picture" : "Image de fond")
+		SET MENU ITEM PARAMETER:C1004($menu; -1; "back")
+		$choice:=Dynamic pop up menu:C1006($menu)
+		RELEASE MENU:C978($menu)
+		
+		If (Length:C16($choice)=0)
+			
+			return 
+			
+		End if 
+	End if 
+	
+	If ($choice="back")
+		
+		SHOW ON DISK:C922($current.bkgMedia.platformPath)
+		
+	Else 
+		
+		SHOW ON DISK:C922($current.media.platformPath)
+		
+	End if 
 	
 	// === === === === === === === === === === === === === === === === === === === === === === ===
 Function delete($current : Object) : Collection
@@ -313,12 +340,14 @@ Function move($current : Object) : Collection
 				
 				// TODO:icon
 				ASSERT:C1129(This:C1470.RELEASE)
+				return 
 				
 				//______________________________________________________
 			: ($current.header#Null:C1517)
 				
 				// TODO:header
 				ASSERT:C1129(This:C1470.RELEASE)
+				return 
 				
 				//______________________________________________________
 		End case 
@@ -351,12 +380,14 @@ Function move($current : Object) : Collection
 				
 				// TODO:icon
 				ASSERT:C1129(This:C1470.RELEASE)
+				return 
 				
 				//______________________________________________________
 			: ($current.header#Null:C1517)
 				
 				// TODO:header
 				ASSERT:C1129(This:C1470.RELEASE)
+				return 
 				
 				//______________________________________________________
 		End case 

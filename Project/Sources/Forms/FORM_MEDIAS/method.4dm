@@ -11,6 +11,7 @@ Case of
 		
 		SET WINDOW TITLE:C213("Medias: "+$helper.editor.name)
 		OBJECT SET SCROLLBAR:C843(*; "list"; 0; 2)
+		OBJECT SET VALUE:C1742("page"; 1)
 		
 		//______________________________________________________
 	: ($e.code=On Activate:K2:9)
@@ -71,25 +72,43 @@ Case of
 		
 		Form:C1466.picture:=$media
 		
+		If ($current.customBackgroundPicture#Null:C1517)
+			
+			OBJECT SET FORMAT:C236(*; "view"; ";;;;;;;;;;1")
+			OBJECT SET FORMAT:C236(*; "move"; ";;;;;;;;;;1")
+			OBJECT SET FORMAT:C236(*; "delete"; ";;;;;;;;;;1")
+			
+		Else 
+			
+			OBJECT SET FORMAT:C236(*; "view"; ";;;;;;;;;;0")
+			OBJECT SET FORMAT:C236(*; "move"; ";;;;;;;;;;0")
+			OBJECT SET FORMAT:C236(*; "delete"; ";;;;;;;;;;0")
+			
+		End if 
+		
 		If ($file=Null:C1517)
 			
 			OBJECT SET VISIBLE:C603(*; "view"; False:C215)
-			OBJECT SET VISIBLE:C603(*; "delete"; False:C215)
 			OBJECT SET VISIBLE:C603(*; "move"; False:C215)
+			OBJECT SET VISIBLE:C603(*; "delete"; False:C215)
+			
 			OBJECT SET RGB COLORS:C628(*; "name"; "red")
+			
 			return 
 			
 		End if 
 		
 		OBJECT SET VISIBLE:C603(*; "view"; True:C214)
-		OBJECT SET VISIBLE:C603(*; "delete"; True:C214)
 		OBJECT SET VISIBLE:C603(*; "move"; True:C214)
+		OBJECT SET VISIBLE:C603(*; "delete"; True:C214)
 		
 		If (Not:C34($file.exists))
 			
 			OBJECT SET ENABLED:C1123(*; "view"; False:C215)
 			OBJECT SET ENABLED:C1123(*; "move"; False:C215)
+			
 			OBJECT SET RGB COLORS:C628(*; "name"; "red")
+			
 			OBJECT SET HELP TIP:C1181(*; "delete"; "Remove this reference")
 			
 			return 
