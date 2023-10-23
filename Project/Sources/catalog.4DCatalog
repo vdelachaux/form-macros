@@ -2,5 +2,4 @@
 <!DOCTYPE base SYSTEM "http://www.4d.com/dtd/2007/base.dtd" >
 <base name="form-macros" uuid="458FAC7E4558264191EE28C7C4423317" collation_locale="fr">
 	<schema name="DEFAULT_SCHEMA"/>
-	<base_extra __stringCompHash="icu:72.1.0" __keywordBuildingHash="icu:72.1.0"/>
 </base>

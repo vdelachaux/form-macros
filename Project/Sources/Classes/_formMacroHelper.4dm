@@ -82,7 +82,7 @@ Function onInvoke($editor : Object) : Object
 		This:C1470.UI_DATA:=New object:C1471(\
 			"result"; False:C215; \
 			"helper"; This:C1470; \
-			"winRef"; This:C1470._openWindow(This:C1470.UI_FORM; Movable form dialog box:K39:8))
+			"winRef"; This:C1470._openWindow(This:C1470.UI_FORM))
 		
 		DIALOG:C40(This:C1470.UI_FORM; This:C1470.UI_DATA)
 		CLOSE WINDOW:C154(This:C1470.UI_DATA.winRef)
@@ -411,7 +411,7 @@ Function GetObjectNames($pageNumber : Integer) : Collection
 			
 			If ($pageNumber<$pages.length)
 				
-				$c:=$c.concat(This:C1470.GetObjectNamesInPage($pages))
+				$c:=$c.concat(This:C1470.GetObjectNamesInPage($page))
 				
 			End if 
 			
